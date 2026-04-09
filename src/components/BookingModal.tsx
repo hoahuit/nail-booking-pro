@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Clock, User, Phone, Sparkles, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, User, Phone, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface BookingModalProps {
@@ -14,14 +14,12 @@ interface BookingModalProps {
 }
 
 const services = [
-  "Sơn Gel",
-  "Đắp Bột & Gel",
+  "Classic Manicure",
+  "Gel Polish",
   "Nail Art",
-  "Kiểu EU - Châu Âu",
-  "Kiểu UK - Anh Quốc",
-  "Combo VIP",
-  "Chăm Sóc Tay",
-  "Tháo & Làm Mới",
+  "European Style",
+  "British Classic",
+  "Full Experience",
 ];
 
 const timeSlots = [
@@ -33,23 +31,18 @@ const timeSlots = [
 const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    service: "",
-    date: "",
-    time: "",
-    note: "",
+    name: "", phone: "", service: "", date: "", time: "", note: "",
   });
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = () => {
     if (!form.name || !form.phone || !form.service || !form.date || !form.time) {
-      toast.error("Vui lòng điền đầy đủ thông tin");
+      toast.error("Please fill in all required fields");
       return;
     }
     setStep(3);
-    toast.success("Đặt lịch thành công!");
+    toast.success("Appointment booked successfully!");
   };
 
   const reset = () => {
@@ -60,51 +53,62 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); else onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-lg bg-card border-border">
+      <DialogContent className="sm:max-w-md bg-card border-border rounded-none">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl text-center flex items-center justify-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            {step === 3 ? "Đặt Lịch Thành Công" : "Đặt Lịch Hẹn"}
+          <DialogTitle className="font-serif text-2xl text-center font-normal tracking-wide">
+            {step === 3 ? "Confirmed" : "Book an Appointment"}
           </DialogTitle>
+          <div className="divider-thin mt-4" />
         </DialogHeader>
 
         {step === 3 ? (
-          <div className="text-center py-8 space-y-4">
-            <CheckCircle2 className="w-16 h-16 text-primary mx-auto" />
-            <p className="text-foreground font-serif text-xl">Cảm ơn bạn, {form.name}!</p>
-            <p className="text-muted-foreground">
-              Lịch hẹn: <strong>{form.service}</strong><br />
-              {form.date} lúc {form.time}
-            </p>
-            <p className="text-sm text-muted-foreground">Chúng tôi sẽ liên hệ qua số {form.phone} để xác nhận.</p>
-            <Button onClick={reset} className="bg-gradient-rose mt-4">Đóng</Button>
+          <div className="text-center py-10 space-y-5">
+            <CheckCircle2 className="w-12 h-12 text-olive mx-auto" />
+            <p className="font-serif text-xl text-foreground">Thank you, {form.name}</p>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>{form.service}</p>
+              <p>{form.date} at {form.time}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">We'll contact you at {form.phone} to confirm.</p>
+            <Button onClick={reset} className="bg-foreground text-background rounded-none text-xs tracking-[0.15em] uppercase mt-4">
+              Close
+            </Button>
           </div>
         ) : (
           <div className="space-y-5 py-4">
             {step === 1 && (
               <>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-foreground"><User className="w-4 h-4 text-primary" />Họ và tên</Label>
-                  <Input placeholder="Nhập họ và tên" value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-background" />
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Full Name
+                  </Label>
+                  <Input placeholder="Your name" value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-background rounded-none border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-foreground"><Phone className="w-4 h-4 text-primary" />Số điện thoại</Label>
-                  <Input placeholder="0912 345 678" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="bg-background" />
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" /> Phone
+                  </Label>
+                  <Input placeholder="+44 7XXX XXX XXX" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="bg-background rounded-none border-border" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-foreground"><Sparkles className="w-4 h-4 text-primary" />Dịch vụ</Label>
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground">Service</Label>
                   <Select value={form.service} onValueChange={(v) => update("service", v)}>
-                    <SelectTrigger className="bg-background"><SelectValue placeholder="Chọn dịch vụ" /></SelectTrigger>
+                    <SelectTrigger className="bg-background rounded-none border-border">
+                      <SelectValue placeholder="Select a service" />
+                    </SelectTrigger>
                     <SelectContent>
                       {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={() => {
-                  if (!form.name || !form.phone || !form.service) { toast.error("Vui lòng điền đầy đủ thông tin"); return; }
-                  setStep(2);
-                }} className="w-full bg-gradient-rose">
-                  Tiếp Theo
+                <Button
+                  onClick={() => {
+                    if (!form.name || !form.phone || !form.service) { toast.error("Please fill in all fields"); return; }
+                    setStep(2);
+                  }}
+                  className="w-full bg-foreground text-background rounded-none text-xs tracking-[0.15em] uppercase py-5"
+                >
+                  Continue
                 </Button>
               </>
             )}
@@ -112,20 +116,24 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
             {step === 2 && (
               <>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-foreground"><Calendar className="w-4 h-4 text-primary" />Ngày hẹn</Label>
-                  <Input type="date" value={form.date} onChange={(e) => update("date", e.target.value)} className="bg-background" min={new Date().toISOString().split("T")[0]} />
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5" /> Date
+                  </Label>
+                  <Input type="date" value={form.date} onChange={(e) => update("date", e.target.value)} className="bg-background rounded-none border-border" min={new Date().toISOString().split("T")[0]} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-foreground"><Clock className="w-4 h-4 text-primary" />Giờ hẹn</Label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" /> Time
+                  </Label>
+                  <div className="grid grid-cols-4 gap-1.5">
                     {timeSlots.map((t) => (
                       <button
                         key={t}
                         onClick={() => update("time", t)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-all border ${
+                        className={`py-2.5 text-xs font-medium transition-all border ${
                           form.time === t
-                            ? "bg-gradient-rose text-primary-foreground border-primary shadow-rose"
-                            : "bg-background text-foreground border-border hover:border-primary/50"
+                            ? "bg-foreground text-background border-foreground"
+                            : "bg-background text-foreground border-border hover:border-foreground/30"
                         }`}
                       >
                         {t}
@@ -134,12 +142,16 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-foreground">Ghi chú (tùy chọn)</Label>
-                  <Textarea placeholder="Yêu cầu đặc biệt..." value={form.note} onChange={(e) => update("note", e.target.value)} className="bg-background" />
+                  <Label className="text-xs tracking-[0.1em] uppercase text-muted-foreground">Notes (optional)</Label>
+                  <Textarea placeholder="Special requests..." value={form.note} onChange={(e) => update("note", e.target.value)} className="bg-background rounded-none border-border" />
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Quay Lại</Button>
-                  <Button onClick={handleSubmit} className="flex-1 bg-gradient-rose">Xác Nhận Đặt Lịch</Button>
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-none text-xs tracking-[0.15em] uppercase">
+                    Back
+                  </Button>
+                  <Button onClick={handleSubmit} className="flex-1 bg-foreground text-background rounded-none text-xs tracking-[0.15em] uppercase">
+                    Confirm
+                  </Button>
                 </div>
               </>
             )}
