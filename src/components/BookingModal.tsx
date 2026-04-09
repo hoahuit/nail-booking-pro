@@ -17,6 +17,8 @@ const services = [
   "Sơn Gel",
   "Đắp Bột & Gel",
   "Nail Art",
+  "Kiểu EU - Châu Âu",
+  "Kiểu UK - Anh Quốc",
   "Combo VIP",
   "Chăm Sóc Tay",
   "Tháo & Làm Mới",
