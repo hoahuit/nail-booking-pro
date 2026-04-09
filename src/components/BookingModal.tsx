@@ -13,14 +13,14 @@ interface BookingModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const services = [
-  "Classic Manicure",
-  "Gel Polish",
-  "Nail Art",
-  "European Style",
-  "British Classic",
-  "Full Experience",
+const serviceCategories = [
+  { group: "Nails EXT - Full Set", items: ["Acrylics Only", "Acrylics & Gel Colour", "Acrylics & Gel Colour French Tips", "Ombre'", "Glitter Powder", "BIAB On Natural", "BIAB With Extensions"] },
+  { group: "Nails EXT - Infill", items: ["Infill Acrylics Only", "Infill Acrylics & Gel Colour", "Infill Ombre'", "Infill Glitter Powder", "Infill BIAB"] },
+  { group: "Natural Nails", items: ["Basic Pedicure", "Luxury Pedicure", "Basic Manicure", "Luxury Manicure", "Gel Polish Hands", "Gel Polish Toes", "Kids Nails"] },
+  { group: "Extra", items: ["Chrome", "Cateyes", "Designs", "Diamonds", "Take Off Acrylics / BIAB", "Take Off Gel Polish"] },
 ];
+
+const allServices = serviceCategories.flatMap((c) => c.items);
 
 const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -97,7 +97,12 @@ const BookingModal = ({ open, onOpenChange }: BookingModalProps) => {
                       <SelectValue placeholder="Select a service" />
                     </SelectTrigger>
                     <SelectContent>
-                      {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {serviceCategories.map((cat) => (
+                        <div key={cat.group}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">{cat.group}</div>
+                          {cat.items.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </div>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

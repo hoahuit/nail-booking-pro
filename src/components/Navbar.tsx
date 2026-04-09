@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavbarProps {
   onBookingClick: () => void;
 }
+
+const navItems = [
+  { label: "Home", id: "hero" },
+  { label: "Our Story", id: "story" },
+  { label: "Services", id: "services" },
+  { label: "Gallery", id: "gallery" },
+  { label: "Contact", id: "contact" },
+];
 
 const Navbar = ({ onBookingClick }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,14 +29,14 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
           LUXE NAILS
         </button>
 
-        <div className="hidden md:flex items-center gap-10">
-          {["Services", "Gallery", "Contact"].map((item, i) => (
+        <div className="hidden lg:flex items-center gap-8">
+          {navItems.map((item) => (
             <button
-              key={item}
-              onClick={() => scrollTo(["services", "gallery", "contact"][i])}
+              key={item.id}
+              onClick={() => scrollTo(item.id)}
               className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
             >
-              {item}
+              {item.label}
             </button>
           ))}
           <Button
@@ -39,20 +47,29 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
           </Button>
         </div>
 
-        <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
+        <div className="hidden lg:flex items-center gap-3 ml-4">
+          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Instagram className="w-4 h-4" />
+          </a>
+          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Facebook className="w-4 h-4" />
+          </a>
+        </div>
+
+        <button className="lg:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-background border-t border-border px-6 pb-8 pt-4 space-y-5">
-          {["Services", "Gallery", "Contact"].map((item, i) => (
+        <div className="lg:hidden bg-background border-t border-border px-6 pb-8 pt-4 space-y-5">
+          {navItems.map((item) => (
             <button
-              key={item}
-              onClick={() => scrollTo(["services", "gallery", "contact"][i])}
+              key={item.id}
+              onClick={() => scrollTo(item.id)}
               className="block w-full text-left text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors py-1"
             >
-              {item}
+              {item.label}
             </button>
           ))}
           <Button

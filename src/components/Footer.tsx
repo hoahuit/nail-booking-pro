@@ -1,35 +1,68 @@
-import { MapPin, Phone, Clock, Instagram } from "lucide-react";
+import { MapPin, Phone, Clock, Instagram, Facebook, Mail } from "lucide-react";
 
 const Footer = () => (
   <footer id="contact" className="bg-foreground text-primary-foreground py-20">
     <div className="container mx-auto">
       <div className="grid md:grid-cols-3 gap-16">
+        {/* Contact */}
         <div>
-          <h3 className="font-serif text-2xl tracking-wide mb-6">LUXE NAILS</h3>
-          <p className="text-primary-foreground/50 text-sm leading-relaxed font-light">
-            A refined nail experience crafted with European precision and artistry. Every detail matters.
-          </p>
-          <a href="#" className="inline-flex items-center gap-2 mt-6 text-xs tracking-[0.15em] uppercase text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors">
-            <Instagram className="w-4 h-4" /> Follow Us
+          <h4 className="text-xs tracking-[0.2em] uppercase text-primary-foreground/50 mb-8">Contact</h4>
+          <div className="space-y-4">
+            <a href="tel:+447482888999" className="flex items-center gap-3 text-sm text-primary-foreground/60 font-light hover:text-primary-foreground/90 transition-colors">
+              <Phone className="w-4 h-4 text-primary-foreground/30" /> 07482 888 999
+            </a>
+            <a href="mailto:info@luxenails.co.uk" className="flex items-center gap-3 text-sm text-primary-foreground/60 font-light hover:text-primary-foreground/90 transition-colors">
+              <Mail className="w-4 h-4 text-primary-foreground/30" /> info@luxenails.co.uk
+            </a>
+          </div>
+        </div>
+
+        {/* Hours */}
+        <div>
+          <h4 className="text-xs tracking-[0.2em] uppercase text-primary-foreground/50 mb-8">Hours</h4>
+          <div className="space-y-3 text-sm text-primary-foreground/60 font-light">
+            <p className="flex items-start gap-3"><Clock className="w-4 h-4 text-primary-foreground/30 mt-0.5" />
+              <span>
+                Mon – Sat: 9:00am – 6:30pm<br />
+                Thurs: 9:00am – 7:00pm<br />
+                Sun: 9:30am – 5:00pm
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <h4 className="text-xs tracking-[0.2em] uppercase text-primary-foreground/50 mb-8">Location</h4>
+          <a
+            href="https://maps.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-start gap-3 text-sm text-primary-foreground/60 font-light hover:text-primary-foreground/90 transition-colors"
+          >
+            <MapPin className="w-4 h-4 text-primary-foreground/30 mt-0.5" />
+            <span>
+              184 Whitchurch Rd,<br />
+              Cardiff CF14 3JP
+            </span>
           </a>
         </div>
-        <div className="space-y-5">
-          <h4 className="text-xs tracking-[0.2em] uppercase text-primary-foreground/50 mb-6">Contact</h4>
-          <p className="flex items-center gap-3 text-sm text-primary-foreground/60 font-light"><MapPin className="w-4 h-4 text-primary-foreground/30" /> 12 King's Road, Chelsea, London</p>
-          <p className="flex items-center gap-3 text-sm text-primary-foreground/60 font-light"><Phone className="w-4 h-4 text-primary-foreground/30" /> +44 20 7946 0958</p>
-          <p className="flex items-center gap-3 text-sm text-primary-foreground/60 font-light"><Clock className="w-4 h-4 text-primary-foreground/30" /> Mon — Sun, 9:00 – 19:00</p>
-        </div>
-        <div>
-          <h4 className="text-xs tracking-[0.2em] uppercase text-primary-foreground/50 mb-6">Services</h4>
-          <ul className="space-y-3 text-sm text-primary-foreground/60 font-light">
-            {["Classic Manicure", "Gel Polish", "Nail Art", "European Style", "British Classic", "Full Experience"].map((s) => (
-              <li key={s} className="hover:text-primary-foreground/90 transition-colors cursor-pointer">{s}</li>
-            ))}
-          </ul>
-        </div>
       </div>
-      <div className="border-t border-primary-foreground/10 mt-16 pt-8 text-center text-xs text-primary-foreground/25 tracking-wider">
-        © 2026 LUXE NAILS. All rights reserved.
+
+      {/* Brand & Social */}
+      <div className="border-t border-primary-foreground/10 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <span className="font-serif text-xl tracking-wide">LUXE NAILS</span>
+        <div className="flex items-center gap-6">
+          <a href="#" className="text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors">
+            <Instagram className="w-5 h-5" />
+          </a>
+          <a href="#" className="text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors">
+            <Facebook className="w-5 h-5" />
+          </a>
+        </div>
+        <span className="text-xs text-primary-foreground/25 tracking-wider">
+          © 2026 LUXE NAILS. All rights reserved.
+        </span>
       </div>
     </div>
   </footer>
