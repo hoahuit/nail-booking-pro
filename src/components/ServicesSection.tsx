@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Gem, Palette, Sparkles, Star, Clock, Heart } from "lucide-react";
+import { Gem, Palette, Sparkles, Star, Clock, Heart, Crown, Globe } from "lucide-react";
 
 interface ServicesSectionProps {
   onBookingClick: () => void;
@@ -9,6 +9,8 @@ const services = [
   { icon: Palette, title: "Sơn Gel", desc: "Bền màu lên đến 3 tuần, đa dạng màu sắc xu hướng", price: "200.000đ", time: "45 phút" },
   { icon: Gem, title: "Đắp Bột & Gel", desc: "Tạo hình móng chuyên nghiệp, bền đẹp tự nhiên", price: "350.000đ", time: "90 phút" },
   { icon: Sparkles, title: "Nail Art", desc: "Thiết kế nghệ thuật độc quyền theo yêu cầu", price: "150.000đ", time: "60 phút" },
+  { icon: Globe, title: "Kiểu EU", desc: "Phong cách Châu Âu tối giản, French tips thanh lịch, tông nude sang trọng", price: "280.000đ", time: "60 phút" },
+  { icon: Crown, title: "Kiểu UK", desc: "Phong cách Anh Quốc cổ điển, màu burgundy & navy đậm chất quý phái", price: "300.000đ", time: "60 phút" },
   { icon: Star, title: "Combo VIP", desc: "Manicure + Pedicure + Nail Art trọn gói", price: "500.000đ", time: "120 phút" },
   { icon: Heart, title: "Chăm Sóc Tay", desc: "Dưỡng da tay, massage thư giãn chuyên sâu", price: "180.000đ", time: "50 phút" },
   { icon: Clock, title: "Tháo & Làm Mới", desc: "Tháo móng cũ an toàn, làm mới hoàn toàn", price: "250.000đ", time: "75 phút" },
