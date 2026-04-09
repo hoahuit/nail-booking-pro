@@ -63,6 +63,29 @@ const OurStorySection = () => {
             </button>
           </motion.div>
         </div>
+
+        {/* Stats strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="mt-24 border-t border-border pt-12 grid grid-cols-2 md:grid-cols-4 gap-8"
+        >
+          {[
+            { value: "8+", label: "Years of Experience" },
+            { value: "500+", label: "Happy Clients" },
+            { value: "20+", label: "Services Offered" },
+            { value: "5★", label: "Average Rating" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <p className="font-serif text-4xl md:text-5xl text-foreground">{stat.value}</p>
+              <p className="mt-2 text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

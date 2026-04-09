@@ -3,16 +3,19 @@ import { Heart, Shield, Sparkles } from "lucide-react";
 
 const features = [
   {
+    num: "01",
     icon: Heart,
     title: "Personalized Experience",
     desc: "Each guest is our favourite guest. Come and make sure that our service is exceptional.",
   },
   {
+    num: "02",
     icon: Shield,
     title: "Professional Care",
     desc: "All products we use are professional and have proven efficiency. No compromises.",
   },
   {
+    num: "03",
     icon: Sparkles,
     title: "We Love What We Do",
     desc: "People that you'll meet in our studio are doing the job they love. Come and see the difference.",
@@ -21,23 +24,67 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section className="py-24">
-      <div className="container mx-auto">
-        <div className="grid md:grid-cols-3 gap-12">
+    <section className="py-32 relative overflow-hidden">
+      {/* Ghost background text */}
+      <span
+        aria-hidden
+        className="absolute right-0 bottom-0 font-serif font-bold pointer-events-none select-none text-foreground leading-none"
+        style={{ fontSize: "clamp(80px, 14vw, 180px)", opacity: 0.025 }}
+      >
+        CARE
+      </span>
+
+      <div className="container mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-20 space-y-4"
+        >
+          <p className="text-xs tracking-[0.32em] uppercase text-muted-foreground">Why Choose Us</p>
+          <h2 className="font-serif text-4xl md:text-5xl text-foreground">Our Promise</h2>
+          <div className="divider-thin !mx-0 mt-6" />
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center space-y-4"
+              transition={{ delay: i * 0.15 }}
+              className="relative p-10 md:p-14 group overflow-hidden"
             >
-              <f.icon className="w-8 h-8 mx-auto text-muted-foreground" strokeWidth={1.2} />
-              <h3 className="font-serif text-2xl text-foreground">{f.title}</h3>
-              <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-xs mx-auto">
-                {f.desc}
-              </p>
+              {/* Large background number */}
+              <span
+                aria-hidden
+                className="absolute top-6 right-8 font-serif font-bold text-foreground select-none leading-none"
+                style={{ fontSize: "clamp(64px, 8vw, 100px)", opacity: 0.05 }}
+              >
+                {f.num}
+              </span>
+
+              <div className="relative z-10 space-y-6">
+                <f.icon
+                  className="w-6 h-6"
+                  style={{ color: "hsl(var(--warm))" }}
+                  strokeWidth={1.2}
+                />
+                <div className="space-y-3">
+                  <h3 className="font-serif text-2xl md:text-3xl text-foreground">
+                    {f.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[280px]">
+                    {f.desc}
+                  </p>
+                </div>
+                {/* Animated bottom accent line */}
+                <div
+                  className="h-px transition-all duration-500 w-0 group-hover:w-10"
+                  style={{ backgroundColor: "hsl(var(--warm))" }}
+                />
+              </div>
             </motion.div>
           ))}
         </div>

@@ -58,6 +58,25 @@ const GallerySection = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-14 text-center space-y-4"
+        >
+          <p className="text-sm text-muted-foreground font-light">
+            Inspired by what you see?
+          </p>
+          <button
+            onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center gap-2 text-xs tracking-[0.22em] uppercase text-foreground border-b border-foreground pb-1 hover:text-primary hover:border-primary transition-colors"
+          >
+            Book This Look
+          </button>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +16,13 @@ const navItems = [
 
 const Navbar = ({ onBookingClick }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -23,7 +30,7 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md">
+    <nav className={`fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md transition-all duration-300 ${scrolled ? "border-b border-border shadow-subtle" : ""}`}>
       <div className="container mx-auto flex items-center justify-between py-5 px-6">
         <button onClick={() => scrollTo("hero")} className="font-serif text-2xl tracking-wide text-foreground">
           LUXE NAILS

@@ -121,9 +121,13 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
           viewport={{ once: true }}
           className="text-center mb-16 space-y-4"
         >
-          <h2 className="font-serif text-4xl md:text-5xl text-foreground font-bold">
+          <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground">Our Services</p>
+          <h2 className="font-serif text-4xl md:text-5xl text-foreground">
             Price List
           </h2>
+          <p className="text-sm text-muted-foreground font-light max-w-md mx-auto">
+            Premium nail care — from classic elegance to avant-garde artistry.
+          </p>
           <div className="divider-thin mt-6" />
         </motion.div>
 
