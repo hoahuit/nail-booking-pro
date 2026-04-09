@@ -7,39 +7,40 @@ import galleryEU from "@/assets/gallery-eu.jpg";
 import galleryUK from "@/assets/gallery-uk.jpg";
 
 const images = [
-  { src: gallery1, alt: "Nail art tinh tế" },
-  { src: galleryEU, alt: "Kiểu EU - French tips thanh lịch" },
-  { src: galleryUK, alt: "Kiểu UK - Burgundy cổ điển" },
-  { src: gallery2, alt: "Pedicure cao cấp" },
-  { src: gallery3, alt: "Thiết kế gel sang trọng" },
-  { src: gallery4, alt: "Bộ sưu tập sơn nail" },
+  { src: galleryEU, alt: "European French tips", span: "col-span-2 row-span-2" },
+  { src: gallery1, alt: "Delicate nail art", span: "" },
+  { src: galleryUK, alt: "British classic style", span: "" },
+  { src: gallery3, alt: "Gel nail design", span: "" },
+  { src: gallery2, alt: "Spa treatment", span: "" },
+  { src: gallery4, alt: "Polish collection", span: "col-span-2" },
 ];
 
 const GallerySection = () => {
   return (
-    <section id="gallery" className="py-24">
+    <section id="gallery" className="py-28 bg-secondary/40">
       <div className="container mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20 space-y-4"
         >
-          <span className="text-sm font-medium tracking-[0.3em] uppercase text-primary">Tác phẩm</span>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mt-4 text-foreground">
-            Bộ Sưu Tập <span className="italic text-primary">Nổi Bật</span>
+          <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground">Portfolio</p>
+          <h2 className="font-serif text-4xl md:text-5xl text-foreground">
+            Our Work
           </h2>
+          <div className="divider-thin mt-6" />
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[250px]">
           {images.map((img, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative overflow-hidden rounded-xl aspect-square"
+              transition={{ delay: i * 0.08 }}
+              className={`group relative overflow-hidden ${img.span}`}
             >
               <img
                 src={img.src}
@@ -47,10 +48,10 @@ const GallerySection = () => {
                 loading="lazy"
                 width={800}
                 height={800}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/30 transition-colors duration-500 flex items-end p-4">
-                <span className="font-serif text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-500 text-sm">
+              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-500 flex items-end p-6">
+                <span className="font-serif text-lg text-primary-foreground opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
                   {img.alt}
                 </span>
               </div>

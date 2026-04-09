@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
-import heroImage from "@/assets/hero-nail.jpg";
+import { ArrowRight } from "lucide-react";
+import heroImage from "@/assets/hero-eu.jpg";
 
 interface HeroSectionProps {
   onBookingClick: () => void;
@@ -9,58 +9,69 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
   return (
-    <section id="hero" className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={heroImage} alt="Luxury nail salon" className="w-full h-full object-cover" width={1920} height={1080} />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/40 to-transparent" />
-      </div>
-
-      <div className="container mx-auto relative z-10 py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="max-w-2xl"
-        >
+    <section id="hero" className="min-h-screen flex items-center pt-20">
+      <div className="container mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+          {/* Left — Text */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-gold/20 backdrop-blur-sm border border-rose-gold/30 mb-8"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+            className="space-y-8 lg:pr-8"
           >
-            <Sparkles className="w-4 h-4 text-rose-gold-light" />
-            <span className="text-sm font-medium tracking-wider text-rose-gold-light uppercase">Chào mừng đến với LuxeNails</span>
+            <div className="space-y-2">
+              <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground">European Nail Studio</p>
+              <div className="divider-thin !mx-0 mt-4" />
+            </div>
+
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl leading-[1.1] text-foreground">
+              The Art of
+              <br />
+              <span className="italic">Beautiful</span> Nails
+            </h1>
+
+            <p className="text-base text-muted-foreground max-w-md leading-relaxed font-light">
+              A refined nail experience inspired by European elegance. Precision, artistry, and attention to every detail.
+            </p>
+
+            <div className="flex items-center gap-6 pt-4">
+              <Button
+                size="lg"
+                onClick={onBookingClick}
+                className="bg-foreground text-background hover:bg-foreground/90 rounded-none text-xs tracking-[0.15em] uppercase px-8 py-6"
+              >
+                Book Appointment
+              </Button>
+              <button
+                onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
+                className="group flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Explore
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </motion.div>
 
-          <h1 className="font-serif text-5xl md:text-7xl font-bold leading-tight mb-6 text-primary-foreground">
-            Nâng Tầm
-            <br />
-            <span className="italic text-rose-gold-light">Vẻ Đẹp</span> Đôi Tay
-          </h1>
-
-          <p className="text-lg md:text-xl mb-10 text-rose-gold-light/80 max-w-lg font-light leading-relaxed">
-            Trải nghiệm dịch vụ nail cao cấp với đội ngũ chuyên gia hàng đầu. Mỗi thiết kế là một tác phẩm nghệ thuật.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              size="lg"
-              onClick={onBookingClick}
-              className="bg-gradient-rose hover:shadow-rose-glow transition-all duration-500 text-lg px-10 py-6"
-            >
-              Đặt Lịch Ngay
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-rose-gold-light/40 text-rose-gold-light hover:bg-rose-gold-light/10 text-lg px-10 py-6"
-            >
-              Xem Dịch Vụ
-            </Button>
-          </div>
-        </motion.div>
+          {/* Right — Image */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut", delay: 0.2 }}
+            className="relative"
+          >
+            <div className="aspect-[4/5] overflow-hidden">
+              <img
+                src={heroImage}
+                alt="European luxury nail studio interior"
+                className="w-full h-full object-cover"
+                width={1920}
+                height={1080}
+              />
+            </div>
+            {/* Minimal accent line */}
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 border border-border" />
+          </motion.div>
+        </div>
       </div>
     </section>
   );
