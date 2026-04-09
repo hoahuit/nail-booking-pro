@@ -3,9 +3,13 @@ import gallery1 from "@/assets/gallery-1.jpg";
 import gallery2 from "@/assets/gallery-2.jpg";
 import gallery3 from "@/assets/gallery-3.jpg";
 import gallery4 from "@/assets/gallery-4.jpg";
+import galleryEU from "@/assets/gallery-eu.jpg";
+import galleryUK from "@/assets/gallery-uk.jpg";
 
 const images = [
   { src: gallery1, alt: "Nail art tinh tế" },
+  { src: galleryEU, alt: "Kiểu EU - French tips thanh lịch" },
+  { src: galleryUK, alt: "Kiểu UK - Burgundy cổ điển" },
   { src: gallery2, alt: "Pedicure cao cấp" },
   { src: gallery3, alt: "Thiết kế gel sang trọng" },
   { src: gallery4, alt: "Bộ sưu tập sơn nail" },
@@ -27,7 +31,7 @@ const GallerySection = () => {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {images.map((img, i) => (
             <motion.div
               key={i}
