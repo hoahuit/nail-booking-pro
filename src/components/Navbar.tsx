@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BUSINESS } from "@/lib/constants";
 
 interface NavbarProps {
   onBookingClick: () => void;
@@ -8,8 +9,8 @@ interface NavbarProps {
 
 const navItems = [
   { label: "Home", id: "hero" },
-  { label: "Our Story", id: "story" },
   { label: "Services", id: "services" },
+  { label: "Our Story", id: "story" },
   { label: "Gallery", id: "gallery" },
   { label: "Contact", id: "contact" },
 ];
@@ -30,10 +31,19 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md transition-all duration-300 ${scrolled ? "border-b border-border shadow-subtle" : ""}`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? "bg-background/95 backdrop-blur-xl border-b border-border shadow-subtle"
+          : "bg-transparent"
+      }`}
+    >
       <div className="container mx-auto flex items-center justify-between py-5 px-6">
-        <button onClick={() => scrollTo("hero")} className="font-serif text-2xl tracking-wide text-foreground">
-          LUXE NAILS
+        <button
+          onClick={() => scrollTo("hero")}
+          className="font-serif text-2xl tracking-[0.08em] text-foreground"
+        >
+          {BUSINESS.name}
         </button>
 
         <div className="hidden lg:flex items-center gap-8">
@@ -55,10 +65,18 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
         </div>
 
         <div className="hidden lg:flex items-center gap-3 ml-4">
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a
+            href={BUSINESS.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <Instagram className="w-4 h-4" />
           </a>
-          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+          <a
+            href={BUSINESS.facebook}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <Facebook className="w-4 h-4" />
           </a>
         </div>
@@ -80,7 +98,10 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
             </button>
           ))}
           <Button
-            onClick={() => { onBookingClick(); setIsOpen(false); }}
+            onClick={() => {
+              onBookingClick();
+              setIsOpen(false);
+            }}
             className="w-full bg-foreground text-background rounded-none text-xs tracking-[0.15em] uppercase"
           >
             Book Now

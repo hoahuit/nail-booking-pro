@@ -1,12 +1,13 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
+import ServicesSection from "@/components/ServicesSection";
 import OurStorySection from "@/components/OurStorySection";
-import ServicesSection, { type ServiceItem } from "@/components/ServicesSection";
 import GallerySection from "@/components/GallerySection";
 import FeaturesSection from "@/components/FeaturesSection";
 import BookingModal from "@/components/BookingModal";
 import Footer from "@/components/Footer";
+import type { ServiceItem } from "@/lib/types";
 
 const Index = () => {
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -21,8 +22,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar onBookingClick={() => handleBooking()} />
       <HeroSection onBookingClick={() => handleBooking()} />
-      <OurStorySection />
       <ServicesSection onBookingClick={handleBooking} />
+      <OurStorySection />
       <GallerySection />
       <FeaturesSection />
       <Footer />

@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, ChevronRight, X, CheckCircle2, User, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { type ServiceItem } from "@/components/ServicesSection";
+import { useCreateBooking } from "@/hooks/useBooking";
+import type { ServiceItem } from "@/lib/types";
 
 interface BookingModalProps {
   open: boolean;
@@ -49,6 +50,8 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
   const [note, setNote] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
 
+  const createBooking = useCreateBooking();
+
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart.toISOString()]);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -72,13 +75,23 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
     onOpenChange(false);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!form.name || !form.phone || !form.email) {
       toast.error("Please fill in all fields");
       return;
     }
+    if (!selectedService || !selectedDate) return;
+
+    await createBooking.mutateAsync({
+      service: selectedService,
+      date: selectedDate.toISOString(),
+      time: selectedTime,
+      staffId: staff,
+      note,
+      customer: form,
+    });
+
     setStep(4);
-    toast.success("Appointment booked successfully!");
   };
 
   const formatDate = (d: Date) =>
@@ -105,7 +118,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
         {/* Step 1: Date & Time */}
         {step === 1 && (
           <div className="p-5 space-y-5">
-            {/* Week navigation */}
             <div className="flex items-center justify-between">
               <button onClick={() => navigateWeek(-1)} className="p-1 hover:bg-accent rounded">
                 <ChevronLeft className="w-5 h-5 text-muted-foreground" />
@@ -116,7 +128,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               </button>
             </div>
 
-            {/* Day pills */}
             <div className="flex gap-1.5 justify-center">
               {weekDays.map((d, i) => {
                 const isPast = d < today;
@@ -127,11 +138,7 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
                     disabled={isPast}
                     onClick={() => setSelectedDate(d)}
                     className={`flex flex-col items-center py-2 px-3 rounded-lg text-xs transition-all ${
-                      isPast
-                        ? "opacity-30 cursor-not-allowed"
-                        : isSelected
-                        ? "bg-[hsl(var(--warm))] text-primary-foreground"
-                        : "hover:bg-accent"
+                      isPast ? "opacity-30 cursor-not-allowed" : isSelected ? "bg-[hsl(var(--warm))] text-primary-foreground" : "hover:bg-accent"
                     }`}
                   >
                     <span className="font-medium">{dayNames[i]}</span>
@@ -141,16 +148,13 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               })}
             </div>
 
-            {/* Period tabs */}
             <div className="flex justify-center border border-border rounded-full overflow-hidden">
               {(Object.keys(timeSlotsByPeriod) as Period[]).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
                   className={`px-5 py-2 text-xs font-medium transition-colors ${
-                    period === p
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground"
+                    period === p ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {p}
@@ -158,7 +162,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               ))}
             </div>
 
-            {/* Time grid */}
             <div className="grid grid-cols-5 gap-2">
               {timeSlotsByPeriod[period].map((t) => (
                 <button
@@ -175,7 +178,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               ))}
             </div>
 
-            {/* Continue */}
             <Button
               onClick={() => {
                 if (!selectedDate || !selectedTime) {
@@ -195,7 +197,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
         {/* Step 2: Service summary + staff */}
         {step === 2 && (
           <div className="p-5 space-y-5">
-            {/* Selected service info */}
             {selectedService && (
               <div className="flex items-center justify-between p-4 bg-secondary/50 rounded">
                 <div>
@@ -208,7 +209,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               </div>
             )}
 
-            {/* Staff selection */}
             <div className="space-y-2">
               <div
                 onClick={() => setStaff("any")}
@@ -242,7 +242,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               ))}
             </div>
 
-            {/* Note */}
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Leave a note (Optional)</Label>
               <Textarea
@@ -254,7 +253,6 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
               />
             </div>
 
-            {/* Total */}
             {selectedService && (
               <div className="text-right space-y-0.5">
                 <p className="text-xs text-muted-foreground">Total</p>
@@ -320,9 +318,10 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
 
             <Button
               onClick={handleConfirm}
+              disabled={createBooking.isPending}
               className="w-full bg-[hsl(var(--warm))] hover:bg-[hsl(var(--warm))]/90 text-primary-foreground rounded-none py-5 text-xs tracking-[0.12em] uppercase"
             >
-              Continue
+              {createBooking.isPending ? "Booking..." : "Continue"}
             </Button>
           </div>
         )}
@@ -337,7 +336,11 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
             </div>
             <div className="bg-secondary/50 p-4 rounded space-y-1 text-sm">
               {selectedService && <p className="font-medium">{selectedService.name}</p>}
-              {selectedDate && <p className="text-muted-foreground">{formatDate(selectedDate)} at {selectedTime}</p>}
+              {selectedDate && (
+                <p className="text-muted-foreground">
+                  {formatDate(selectedDate)} at {selectedTime}
+                </p>
+              )}
               <p className="text-muted-foreground">Staff: {staff === "any" ? "Any Available" : staff}</p>
             </div>
             <p className="text-xs text-muted-foreground">
