@@ -1,16 +1,32 @@
-import { motion, type Variants } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star } from "lucide-react";
-import heroImage from "@/assets/hero-eu.jpg";
+import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
+
+import heroEU from "@/assets/hero-eu.jpg";
+import heroNail from "@/assets/hero-nail.jpg";
+import galleryEU from "@/assets/gallery-eu.jpg";
+import galleryUK from "@/assets/gallery-uk.jpg";
+import gallery1 from "@/assets/gallery-1.jpg";
 
 interface HeroSectionProps {
   onBookingClick: () => void;
 }
 
+const slides = [
+  { src: heroEU,    alt: "European luxury nail studio",   label: "Luxury Interior" },
+  { src: heroNail,  alt: "Artisan nail close-up",          label: "Artisan Craft" },
+  { src: galleryEU, alt: "European French tips",           label: "French Tips" },
+  { src: galleryUK, alt: "Classic British style",          label: "Classic Style" },
+  { src: gallery1,  alt: "Delicate nail art",              label: "Nail Art" },
+];
+
+const INTERVAL_MS = 2000;
+
 const stats = [
-  { value: "8+", label: "Years of Excellence" },
+  { value: "8+",   label: "Years of Excellence" },
   { value: "500+", label: "Happy Clients" },
-  { value: "5★", label: "Average Rating" },
+  { value: "5★",   label: "Average Rating" },
 ];
 
 const stagger: Variants = {
@@ -18,11 +34,32 @@ const stagger: Variants = {
 };
 
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 28 },
+  hidden:  { opacity: 0, y: 28 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: "easeOut" } },
 };
 
 const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
+  const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [paused, setPaused] = useState(false);
+
+  const go = useCallback((next: number, dir: number) => {
+    setDirection(dir);
+    setCurrent((next + slides.length) % slides.length);
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => go(current + 1, 1), INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [current, paused, go]);
+
+  const slideVariants: Variants = {
+    enter:   (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+    center:  { x: 0, opacity: 1, transition: { duration: 0.65, ease: "easeInOut" } },
+    exit:    (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0, transition: { duration: 0.55, ease: "easeInOut" } }),
+  };
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center overflow-hidden">
       {/* Warm radial glow */}
@@ -115,34 +152,110 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
             </motion.div>
           </motion.div>
 
-          {/* ── Right: Image ── */}
+          {/* ── Right: Auto-cycling Carousel ── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
             className="lg:col-span-6 xl:col-span-7 relative"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
           >
             <div className="relative max-w-[520px] ml-auto">
-              {/* Main image */}
-              <div className="aspect-[4/5] overflow-hidden">
-                <img
-                  src={heroImage}
-                  alt="European luxury nail studio"
-                  className="w-full h-full object-cover"
-                  width={1040}
-                  height={1300}
-                />
+
+              {/* Carousel frame */}
+              <div className="aspect-[4/5] overflow-hidden relative bg-secondary">
+                <AnimatePresence custom={direction} initial={false}>
+                  <motion.img
+                    key={current}
+                    src={slides[current].src}
+                    alt={slides[current].alt}
+                    custom={direction}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    width={1040}
+                    height={1300}
+                  />
+                </AnimatePresence>
+
+                {/* Slide label (bottom-left overlay) */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`label-${current}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute bottom-5 left-5 z-10"
+                  >
+                    <span className="bg-background/80 backdrop-blur-sm px-3 py-1.5 text-[10px] tracking-[0.22em] uppercase text-foreground font-medium">
+                      {slides[current].label}
+                    </span>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Soft bottom vignette */}
+                <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-foreground/20 to-transparent pointer-events-none" />
+
+                {/* Prev / Next arrows */}
+                <button
+                  aria-label="Previous slide"
+                  onClick={() => go(current - 1, -1)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 hover:bg-background transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4 text-foreground" />
+                </button>
+                <button
+                  aria-label="Next slide"
+                  onClick={() => go(current + 1, 1)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-background/70 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 hover:bg-background transition-all"
+                >
+                  <ChevronRight className="w-4 h-4 text-foreground" />
+                </button>
               </div>
 
-              {/* Soft bottom vignette */}
-              <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-foreground/15 to-transparent pointer-events-none" />
+              {/* Dot indicators + progress bar */}
+              <div className="mt-4 flex flex-col items-end gap-2.5 pr-1">
+                {/* Progress bar */}
+                <div className="w-full h-px bg-border overflow-hidden">
+                  <motion.div
+                    key={`progress-${current}`}
+                    className="h-full bg-warm"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: paused ? undefined : 1 }}
+                    transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
+                    style={{ transformOrigin: "left" }}
+                  />
+                </div>
+                {/* Dots */}
+                <div className="flex items-center gap-2">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      aria-label={`Go to slide ${i + 1}`}
+                      onClick={() => go(i, i > current ? 1 : -1)}
+                      className={`transition-all duration-300 rounded-none ${
+                        i === current
+                          ? "w-6 h-1.5 bg-foreground"
+                          : "w-1.5 h-1.5 bg-border hover:bg-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                  <span className="ml-2 text-[10px] tracking-[0.15em] text-muted-foreground tabular-nums">
+                    {String(current + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
 
               {/* Floating: star rating badge */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.0, duration: 0.55 }}
-                className="absolute -left-6 top-10 bg-background border border-border px-5 py-3.5 shadow-elevated"
+                className="absolute -left-6 top-10 bg-background border border-border px-5 py-3.5 shadow-elevated z-20"
               >
                 <div className="flex gap-1 mb-1.5">
                   {Array.from({ length: 5 }).map((_, j) => (
@@ -159,7 +272,7 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.18, duration: 0.52 }}
-                className="absolute -bottom-5 right-8 bg-foreground text-primary-foreground px-7 py-4"
+                className="absolute -bottom-14 right-8 bg-foreground text-primary-foreground px-7 py-4 z-20"
               >
                 <p className="font-serif text-2xl leading-none">2016</p>
                 <p className="mt-1 text-[9px] tracking-[0.28em] uppercase text-primary-foreground/50">
