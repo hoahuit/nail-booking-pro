@@ -21,10 +21,10 @@ const AdminLogin = () => {
     setTimeout(() => {
       if (password === ADMIN_PASSWORD) {
         localStorage.setItem("admin_auth", "true");
-        toast.success("Welcome back!");
+        toast.success("Chào mừng trở lại!");
         navigate("/admin/dashboard");
       } else {
-        toast.error("Incorrect password");
+        toast.error("Mật khẩu không đúng");
       }
       setLoading(false);
     }, 400);
@@ -39,7 +39,7 @@ const AdminLogin = () => {
             LUXE NAILS
           </span>
           <p className="text-[10px] tracking-[0.3em] uppercase text-primary-foreground/35 mt-2">
-            Admin Portal
+            Cổng quản trị
           </p>
           <div className="w-12 h-px bg-primary-foreground/15 mx-auto mt-5" />
         </div>
@@ -51,7 +51,7 @@ const AdminLogin = () => {
               htmlFor="password"
               className="text-[10px] tracking-[0.18em] uppercase text-primary-foreground/45"
             >
-              Password
+              Mật khẩu
             </Label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/25" />
@@ -61,7 +61,7 @@ const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-11 pr-11 h-12 rounded-none bg-primary-foreground/[0.06] border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/25 focus-visible:ring-0 focus-visible:border-primary-foreground/35"
-                placeholder="Enter admin password"
+                placeholder="Nhập mật khẩu quản trị"
                 autoFocus
               />
               <button
@@ -79,12 +79,12 @@ const AdminLogin = () => {
             disabled={loading || !password}
             className="w-full rounded-none h-12 bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20 text-[10px] tracking-[0.22em] uppercase disabled:opacity-30 transition-colors"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading ? "Đang đăng nhập…" : "Đăng nhập"}
           </Button>
         </form>
 
         <p className="mt-10 text-center text-[10px] tracking-wider text-primary-foreground/18 uppercase">
-          Luxe Nails Admin · 2026
+          Luxe Nails Quản trị · 2026
         </p>
       </div>
     </div>

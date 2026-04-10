@@ -14,11 +14,11 @@ import { mockBookings, mockCustomers } from "@/lib/mockAdminData";
 import type { Booking, BookingStatus, Customer } from "@/lib/adminTypes";
 
 const STATUS_TABS: { key: BookingStatus | "all"; label: string }[] = [
-  { key: "all",       label: "All" },
-  { key: "pending",   label: "Pending" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "completed", label: "Completed" },
-  { key: "cancelled", label: "Cancelled" },
+  { key: "all",       label: "Tất cả" },
+  { key: "pending",   label: "Chờ xác nhận" },
+  { key: "confirmed", label: "Đã xác nhận" },
+  { key: "completed", label: "Hoàn thành" },
+  { key: "cancelled", label: "Đã hủy" },
 ];
 
 const statusColors: Record<BookingStatus, string> = {
@@ -26,6 +26,13 @@ const statusColors: Record<BookingStatus, string> = {
   confirmed: "bg-blue-100 text-blue-700 border-blue-200",
   completed: "bg-green-100 text-green-700 border-green-200",
   cancelled: "bg-red-100 text-red-600 border-red-200",
+};
+
+const statusLabels: Record<BookingStatus, string> = {
+  pending:   "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  completed: "Hoàn thành",
+  cancelled: "Đã hủy",
 };
 
 const POINTS_PER_BOOKING = 10;
@@ -62,12 +69,12 @@ const AdminBookings = () => {
 
   const updateStatus = (id: string, status: BookingStatus) => {
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
-    toast.success(`Booking marked as ${status}`);
+    toast.success(`Lịch đã chuyển sang: ${statusLabels[status]}`);
   };
 
   const awardPoints = (booking: Booking) => {
     if (booking.pointsAwarded) {
-      toast.info("Points already awarded for this booking");
+      toast.info("Điểm đã được cộng trước đó");
       return;
     }
     setBookings((prev) =>
@@ -95,16 +102,16 @@ const AdminBookings = () => {
         },
       ];
     });
-    toast.success(`+${POINTS_PER_BOOKING} pts awarded to ${booking.customerName}`);
+    toast.success(`+${POINTS_PER_BOOKING} điểm đã cộng cho ${booking.customerName}`);
   };
 
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header */}
       <div>
-        <h1 className="font-serif text-3xl md:text-4xl text-foreground">Bookings</h1>
+        <h1 className="font-serif text-3xl md:text-4xl text-foreground">Lịch đặt</h1>
         <p className="mt-1 text-sm text-muted-foreground font-light">
-          {bookings.length} total · {bookings.filter((b) => b.status === "pending").length} pending
+          {bookings.length} tổng · {bookings.filter((b) => b.status === "pending").length} chờ xác nhận
         </p>
       </div>
 
@@ -114,7 +121,7 @@ const AdminBookings = () => {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, or service…"
+          placeholder="Tìm theo tên, SĐT hoặc dịch vụ…"
           className="w-full pl-11 pr-4 py-3 text-sm bg-card border border-border outline-none focus:border-foreground/40 transition-colors placeholder:text-muted-foreground/50"
         />
       </div>
@@ -150,7 +157,7 @@ const AdminBookings = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/40 border-b border-border">
-                {["ID", "Customer", "Phone", "Service", "Date", "Time", "Price", "Status", "Actions"].map((h) => (
+                {["ID", "Khách hàng", "Điện thoại", "Dịch vụ", "Ngày", "Giờ", "Giá", "Trạng thái", "Thao tác"].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3.5 text-left text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium whitespace-nowrap"
@@ -164,7 +171,7 @@ const AdminBookings = () => {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-4 py-14 text-center text-muted-foreground text-sm">
-                    No bookings found
+                    Không có lịch đặt nào
                   </td>
                 </tr>
               )}
@@ -201,7 +208,7 @@ const AdminBookings = () => {
                       <span
                         className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium border ${statusColors[b.status]}`}
                       >
-                        {b.status}
+                        {statusLabels[b.status]}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -209,7 +216,7 @@ const AdminBookings = () => {
                         {b.status === "pending" && (
                           <button
                             onClick={() => updateStatus(b.id, "confirmed")}
-                            title="Confirm booking"
+                            title="Xác nhận lịch"
                             className="p-2 hover:bg-blue-50 text-blue-500 rounded transition-colors"
                           >
                             <CalendarCheck className="w-3.5 h-3.5" />
@@ -218,7 +225,7 @@ const AdminBookings = () => {
                         {(b.status === "pending" || b.status === "confirmed") && (
                           <button
                             onClick={() => updateStatus(b.id, "completed")}
-                            title="Mark completed"
+                            title="Đánh dấu hoàn thành"
                             className="p-2 hover:bg-green-50 text-green-500 rounded transition-colors"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -227,7 +234,7 @@ const AdminBookings = () => {
                         {b.status === "completed" && (
                           <button
                             onClick={() => awardPoints(b)}
-                            title={b.pointsAwarded ? "Points already awarded" : "Award 10 points"}
+                            title={b.pointsAwarded ? "Điểm đã cộng" : "Cộng 10 điểm"}
                             className={`p-2 rounded transition-colors ${
                               b.pointsAwarded
                                 ? "text-muted-foreground/30 cursor-not-allowed"
@@ -242,7 +249,7 @@ const AdminBookings = () => {
                         {b.status !== "cancelled" && b.status !== "completed" && (
                           <button
                             onClick={() => updateStatus(b.id, "cancelled")}
-                            title="Cancel booking"
+                            title="Hủy lịch"
                             className="p-2 hover:bg-red-50 text-red-400 rounded transition-colors"
                           >
                             <XCircle className="w-3.5 h-3.5" />
@@ -273,32 +280,32 @@ const AdminBookings = () => {
                           </div>
                           <div>
                             <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Staff Preference
+                              Nhân viên
                             </p>
                             <p className="text-foreground capitalize">{b.staff}</p>
                           </div>
                           <div>
                             <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Points
+                              Điểm
                             </p>
                             <p className="text-foreground">
-                              {b.pointsAwarded ? "✓ 10 pts awarded" : "Not yet awarded"}
+                              {b.pointsAwarded ? "✓ Đã cộng 10 điểm" : "Chưa cộng điểm"}
                             </p>
                           </div>
                           {b.notes && (
                             <div className="sm:col-span-3">
                               <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                                Customer Notes
+                                Ghi chú khách hàng
                               </p>
                               <p className="text-foreground italic">"{b.notes}"</p>
                             </div>
                           )}
                           <div>
                             <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Created At
+                              Ngày tạo
                             </p>
                             <p className="text-muted-foreground text-xs">
-                              {new Date(b.createdAt).toLocaleString("en-GB")}
+                              {new Date(b.createdAt).toLocaleString("vi-VN")}
                             </p>
                           </div>
                         </div>

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Heart, Shield, Sparkles } from "lucide-react";
+import Butterfly from "@/components/Butterfly";
 
 const features = [
   {
@@ -24,6 +25,21 @@ const features = [
 
 const FeaturesSection = () => (
   <section className="py-32 relative overflow-hidden">
+    {/* Butterfly accents */}
+    <Butterfly
+      color="#b8a4c8" secondaryColor="#a890ba" size={44}
+      left="2%" top="20%"
+      pathX={[0, 50, 10, 70, 0]} pathY={[0, -30, 20, -40, 0]}
+      pathRotate={[0, 8, -6, 10, 0]}
+      delay={0.5} flapSpeed={0.52} pathDuration={13} opacity={0.28}
+    />
+    <Butterfly
+      color="#c9857a" secondaryColor="#b06e65" size={36}
+      left="91%" top="55%"
+      pathX={[0, -40, -10, -60, 0]} pathY={[0, -20, 30, -10, 0]}
+      pathRotate={[0, -7, 5, -9, 0]}
+      delay={2.0} flapSpeed={0.46} pathDuration={11} opacity={0.25}
+    />
     <span
       aria-hidden
       className="absolute right-0 bottom-0 font-serif font-bold pointer-events-none select-none text-foreground leading-none"

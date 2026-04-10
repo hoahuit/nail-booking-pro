@@ -13,6 +13,13 @@ const statusColors: Record<BookingStatus, string> = {
   cancelled: "bg-red-100 text-red-600 border-red-200",
 };
 
+const statusLabels: Record<BookingStatus, string> = {
+  pending:   "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  completed: "Hoàn thành",
+  cancelled: "Đã hủy",
+};
+
 const AdminDashboard = () => {
   const [bookings]  = useLocalStorage<Booking[]>("admin_bookings", mockBookings);
   const [customers] = useLocalStorage<Customer[]>("admin_customers", mockCustomers);
@@ -36,33 +43,33 @@ const AdminDashboard = () => {
 
   const statCards = [
     {
-      label: "Today's Bookings",
+      label: "Lịch hôm nay",
       value: stats.todayCount,
-      sub: `${stats.pending} pending`,
+      sub: `${stats.pending} chờ xác nhận`,
       icon: CalendarDays,
       iconColor: "text-blue-500",
       bg: "bg-blue-50",
     },
     {
-      label: "Awaiting Confirmation",
+      label: "Chờ xác nhận",
       value: stats.pending,
-      sub: "need action",
+      sub: "cần xử lý",
       icon: TrendingUp,
       iconColor: "text-amber-500",
       bg: "bg-amber-50",
     },
     {
-      label: "Total Customers",
+      label: "Tổng khách hàng",
       value: customers.length,
-      sub: "registered",
+      sub: "đã đăng ký",
       icon: Users,
       iconColor: "text-green-500",
       bg: "bg-green-50",
     },
     {
-      label: "Points in Circulation",
+      label: "Điểm lưu hành",
       value: stats.totalPts,
-      sub: "across all clients",
+      sub: "toàn bộ khách",
       icon: Star,
       iconColor: "text-warm",
       bg: "bg-[hsl(35_18%_94%)]",
@@ -74,9 +81,9 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-serif text-3xl md:text-4xl text-foreground">Dashboard</h1>
+          <h1 className="font-serif text-3xl md:text-4xl text-foreground">Tổng quan</h1>
           <p className="mt-1 text-sm text-muted-foreground font-light">
-            {new Date().toLocaleDateString("en-GB", {
+            {new Date().toLocaleDateString("vi-VN", {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -88,7 +95,7 @@ const AdminDashboard = () => {
           onClick={() => navigate("/admin/bookings")}
           className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-primary-foreground text-[10px] tracking-[0.2em] uppercase hover:bg-foreground/85 transition-colors"
         >
-          Manage Bookings
+          Quản lý lịch
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -125,12 +132,12 @@ const AdminDashboard = () => {
         className="bg-card shadow-subtle overflow-hidden"
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h2 className="font-serif text-xl text-foreground">Recent Bookings</h2>
+          <h2 className="font-serif text-xl text-foreground">Lịch đặt gần đây</h2>
           <button
             onClick={() => navigate("/admin/bookings")}
             className="flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-muted-foreground hover:text-foreground border-b border-transparent hover:border-foreground pb-0.5 transition-all"
           >
-            View All <ArrowRight className="w-3 h-3" />
+            Xem tất cả <ArrowRight className="w-3 h-3" />
           </button>
         </div>
 
@@ -138,7 +145,7 @@ const AdminDashboard = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/40 border-b border-border">
-                {["Customer", "Phone", "Service", "Date", "Time", "Status"].map((h) => (
+                {["Khách hàng", "Điện thoại", "Dịch vụ", "Ngày", "Giờ", "Trạng thái"].map((h) => (
                   <th
                     key={h}
                     className="px-5 py-3 text-left text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium"
@@ -170,7 +177,7 @@ const AdminDashboard = () => {
                     <span
                       className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium border ${statusColors[b.status]}`}
                     >
-                      {b.status}
+                      {statusLabels[b.status]}
                     </span>
                   </td>
                 </tr>

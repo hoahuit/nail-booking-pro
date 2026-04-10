@@ -12,9 +12,9 @@ import {
 import { toast } from "sonner";
 
 const navLinks = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/bookings", icon: CalendarDays, label: "Bookings" },
-  { to: "/admin/points", icon: Star, label: "Points" },
+  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+  { to: "/admin/bookings", icon: CalendarDays, label: "Lịch đặt" },
+  { to: "/admin/points", icon: Star, label: "Điểm thưởng" },
 ];
 
 const SidebarContent = ({
@@ -32,7 +32,7 @@ const SidebarContent = ({
           LUXE NAILS
         </span>
         <p className="text-[9px] tracking-[0.25em] uppercase text-primary-foreground/30 mt-0.5">
-          Admin Portal
+          Cổng quản trị
         </p>
       </div>
       {onClose && (
@@ -55,8 +55,8 @@ const SidebarContent = ({
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3.5 text-[10px] tracking-[0.16em] uppercase transition-all duration-150 ${
               isActive
-                ? "bg-primary-foreground/12 text-primary-foreground border-l-2 border-primary-foreground/60"
-                : "text-primary-foreground/45 hover:text-primary-foreground/80 hover:bg-primary-foreground/[0.06] border-l-2 border-transparent"
+                ? "text-primary-foreground border-l-2 border-primary-foreground/60"
+                : "text-primary-foreground/45 hover:text-primary-foreground/80 border-l-2 border-transparent"
             }`
           }
         >
@@ -75,14 +75,14 @@ const SidebarContent = ({
         className="flex items-center gap-3 px-4 py-3 text-[10px] tracking-[0.16em] uppercase text-primary-foreground/35 hover:text-primary-foreground/65 transition-colors"
       >
         <ExternalLink className="w-4 h-4" />
-        View Live Site
+        Xem trang khách
       </a>
       <button
         onClick={onLogout}
         className="w-full flex items-center gap-3 px-4 py-3 text-[10px] tracking-[0.16em] uppercase text-primary-foreground/35 hover:text-red-400 transition-colors"
       >
         <LogOut className="w-4 h-4" />
-        Sign Out
+        Đăng xuất
       </button>
     </div>
   </>
@@ -94,7 +94,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("admin_auth");
-    toast.info("Signed out");
+    toast.info("Đã đăng xuất");
     navigate("/admin/login");
   };
 
@@ -142,7 +142,7 @@ const AdminLayout = () => {
         </main>
 
         <footer className="px-8 py-4 text-[10px] tracking-wider text-muted-foreground/40 uppercase text-right">
-          Luxe Nails Admin · {new Date().getFullYear()}
+          Luxe Nails Quản trị · {new Date().getFullYear()}
         </footer>
       </div>
     </div>

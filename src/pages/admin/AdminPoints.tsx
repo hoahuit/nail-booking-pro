@@ -50,12 +50,12 @@ const AdminPoints = () => {
 
   const handleAdjust = (type: "add" | "deduct") => {
     const val = parseInt(adjustDelta);
-    if (!val || val <= 0) { toast.error("Enter a valid amount"); return; }
-    if (!adjustReason.trim()) { toast.error("Reason is required"); return; }
+    if (!val || val <= 0) { toast.error("Vui lòng nhập số điểm hợp lệ"); return; }
+    if (!adjustReason.trim()) { toast.error("Lý do là bắt buộc"); return; }
     const delta = type === "add" ? val : -val;
     applyTransaction(delta, adjustReason.trim(), adjustNote.trim() || undefined);
     toast.success(
-      `${type === "add" ? "+" : "-"}${val} pts ${type === "add" ? "added to" : "deducted from"} ${found!.name}`
+      `${type === "add" ? "+" : "-"}${val} điểm đã ${type === "add" ? "cộng cho" : "trừ của"} ${found!.name}`
     );
     setAdjustDelta("");
     setAdjustReason("");
@@ -64,14 +64,14 @@ const AdminPoints = () => {
 
   const handleRedeem = () => {
     if (!found || found.points < REDEMPTION_THRESHOLD) {
-      toast.error(`Minimum ${REDEMPTION_THRESHOLD} pts required`);
+      toast.error(`Cần tối thiểu ${REDEMPTION_THRESHOLD} điểm để đổi thưởng`);
       return;
     }
     applyTransaction(
       -REDEMPTION_THRESHOLD,
-      `Redeemed ${REDEMPTION_THRESHOLD} pts — £${POINTS_VALUE} discount applied`
+      `Đổi ${REDEMPTION_THRESHOLD} điểm — giảm £${POINTS_VALUE}`
     );
-    toast.success(`£${POINTS_VALUE} off applied for ${found.name}`);
+    toast.success(`Giảm £${POINTS_VALUE} đã áp dụng cho ${found.name}`);
   };
 
   const customerTxs = transactions.filter((t) => found && t.phone === found.phone);
@@ -80,9 +80,9 @@ const AdminPoints = () => {
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div>
-        <h1 className="font-serif text-3xl md:text-4xl text-foreground">Points Manager</h1>
+        <h1 className="font-serif text-3xl md:text-4xl text-foreground">Quản lý điểm</h1>
         <p className="mt-1 text-sm text-muted-foreground font-light">
-          Look up a customer by phone number to view and manage loyalty points
+          Tra cứu khách hàng theo số điện thoại để xem và quản lý điểm tích lũy
         </p>
       </div>
 
@@ -92,9 +92,9 @@ const AdminPoints = () => {
         style={{ borderColor: "hsl(var(--warm))" }}
       >
         {[
-          { label: "Points per booking",    value: "10 pts" },
-          { label: "Redemption threshold",  value: "100 pts = £5 off" },
-          { label: "Points never expire",   value: "✓" },
+          { label: "Điểm mỗi lịch đặt",      value: "10 điểm" },
+          { label: "Mức đổi thưởng",           value: "100 điểm = £5 giảm giá" },
+          { label: "Điểm không hết hạn",        value: "✓" },
         ].map((r) => (
           <div key={r.label}>
             <p className="text-[10px] tracking-[0.16em] uppercase text-muted-foreground">{r.label}</p>
@@ -107,7 +107,7 @@ const AdminPoints = () => {
       <div className="bg-card shadow-subtle p-6 space-y-5">
         <h2 className="font-serif text-xl text-foreground flex items-center gap-2.5">
           <Phone className="w-4 h-4" style={{ color: "hsl(var(--warm))" }} />
-          Customer Lookup
+          Tra cứu khách hàng
         </h2>
 
         <div className="flex gap-3 flex-wrap sm:flex-nowrap">
@@ -118,7 +118,7 @@ const AdminPoints = () => {
               value={phone}
               onChange={(e) => { setPhone(e.target.value); setSearched(false); setFound(null); }}
               onKeyDown={(e) => e.key === "Enter" && doSearch()}
-              placeholder="Phone number  (e.g. 07700900002)"
+            placeholder="Số điện thoại  (vd: 07700900002)"
               className="w-full pl-11 pr-4 py-3 text-sm bg-background border border-border outline-none focus:border-foreground/40 transition-colors placeholder:text-muted-foreground/50"
             />
           </div>
@@ -127,7 +127,7 @@ const AdminPoints = () => {
             disabled={!phone.trim()}
             className="px-7 py-3 bg-foreground text-primary-foreground text-[10px] tracking-[0.2em] uppercase disabled:opacity-35 hover:bg-foreground/85 transition-colors flex-shrink-0"
           >
-            Search
+            Tìm kiếm
           </button>
         </div>
 
@@ -139,7 +139,7 @@ const AdminPoints = () => {
               exit={{ opacity: 0 }}
               className="text-sm text-muted-foreground"
             >
-              No customer found for that number.
+              Không tìm thấy khách hàng với số điện thoại này.
             </motion.p>
           )}
 
@@ -160,9 +160,9 @@ const AdminPoints = () => {
                   <p className="text-sm text-muted-foreground">{found.phone}</p>
                   <p className="text-sm text-muted-foreground">{found.email}</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">
-                    Member since{" "}
-                    {new Date(found.joinedAt).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
-                    {" · "}{found.totalBookings} bookings
+                    Thành viên từ{" "}
+                    {new Date(found.joinedAt).toLocaleDateString("vi-VN", { month: "long", year: "numeric" })}
+                    {" · "}{found.totalBookings} lượt đặt
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -171,7 +171,7 @@ const AdminPoints = () => {
                     <span className="font-serif text-5xl text-foreground leading-none">{found.points}</span>
                   </div>
                   <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mt-1.5">
-                    Points balance
+                    Số điểm
                   </p>
                   {found.points >= REDEMPTION_THRESHOLD && (
                     <button
@@ -179,7 +179,7 @@ const AdminPoints = () => {
                       className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-foreground text-primary-foreground text-[10px] tracking-[0.18em] uppercase hover:bg-foreground/85 transition-colors ml-auto"
                     >
                       <Gift className="w-3.5 h-3.5" />
-                      Redeem £{POINTS_VALUE} Off
+                      Đổi giảm £{POINTS_VALUE}
                     </button>
                   )}
                 </div>
@@ -188,12 +188,12 @@ const AdminPoints = () => {
               {/* Manual adjustment */}
               <div className="border border-border p-5 space-y-5">
                 <h3 className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
-                  Manual Points Adjustment
+                  Điều chỉnh điểm thủ công
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                      Points Amount *
+                      Số điểm *
                     </label>
                     <input
                       type="number"
@@ -206,25 +206,25 @@ const AdminPoints = () => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                      Reason *
+                      Lý do *
                     </label>
                     <input
                       type="text"
                       value={adjustReason}
                       onChange={(e) => setAdjustReason(e.target.value)}
-                      placeholder="e.g. Referral bonus"
+                      placeholder="vd: Thưởng giới thiệu bạn bè"
                       className="w-full px-4 py-2.5 text-sm bg-background border border-border outline-none focus:border-foreground/40 transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground">
-                      Internal Note (optional)
+                      Ghi chú nội bộ (tùy chọn)
                     </label>
                     <input
                       type="text"
                       value={adjustNote}
                       onChange={(e) => setAdjustNote(e.target.value)}
-                      placeholder="Admin note…"
+                      placeholder="Ghi chú admin…"
                       className="w-full px-4 py-2.5 text-sm bg-background border border-border outline-none focus:border-foreground/40 transition-colors"
                     />
                   </div>
@@ -234,13 +234,13 @@ const AdminPoints = () => {
                     onClick={() => handleAdjust("add")}
                     className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white text-[10px] tracking-[0.18em] uppercase hover:bg-green-700 transition-colors"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Points
+                    <Plus className="w-3.5 h-3.5" /> Cộng điểm
                   </button>
                   <button
                     onClick={() => handleAdjust("deduct")}
                     className="flex items-center gap-2 px-6 py-2.5 bg-red-500 text-white text-[10px] tracking-[0.18em] uppercase hover:bg-red-600 transition-colors"
                   >
-                    <Minus className="w-3.5 h-3.5" /> Deduct Points
+                    <Minus className="w-3.5 h-3.5" /> Trừ điểm
                   </button>
                 </div>
               </div>
@@ -249,7 +249,7 @@ const AdminPoints = () => {
               {customerTxs.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-[10px] tracking-[0.22em] uppercase text-muted-foreground">
-                    Transaction History ({customerTxs.length})
+                    Lịch sử giao dịch ({customerTxs.length})
                   </h3>
                   <div className="border border-border divide-y divide-border">
                     {customerTxs.map((tx) => (
@@ -258,11 +258,11 @@ const AdminPoints = () => {
                           <p className="text-foreground">{tx.reason}</p>
                           {tx.adminNote && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Note: {tx.adminNote}
+                              Ghi chú: {tx.adminNote}
                             </p>
                           )}
                           <p className="text-[10px] text-muted-foreground/50 mt-1.5">
-                            {new Date(tx.createdAt).toLocaleString("en-GB", {
+                            {new Date(tx.createdAt).toLocaleString("vi-VN", {
                               day: "numeric", month: "short", year: "numeric",
                               hour: "2-digit", minute: "2-digit",
                             })}
@@ -289,7 +289,7 @@ const AdminPoints = () => {
       <div className="bg-card shadow-subtle overflow-hidden">
         <div className="px-6 py-5 border-b border-border">
           <h2 className="font-serif text-xl text-foreground">
-            All Customers
+            Tất cả khách hàng
             <span className="ml-2 text-sm font-sans font-normal text-muted-foreground">
               ({customers.length})
             </span>
@@ -299,7 +299,7 @@ const AdminPoints = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/40 border-b border-border">
-                {["Name", "Phone", "Email", "Points", "Bookings", "Joined"].map((h) => (
+                {["Tên", "Điện thoại", "Email", "Điểm", "Lịch đặt", "Ngày tham gia"].map((h) => (
                   <th
                     key={h}
                     className="px-6 py-3.5 text-left text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium"
@@ -325,14 +325,14 @@ const AdminPoints = () => {
                       <span className="font-medium text-foreground">{c.points}</span>
                       {c.points >= REDEMPTION_THRESHOLD && (
                         <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 uppercase tracking-wider">
-                          Redeemable
+                          Đủ điều kiện
                         </span>
                       )}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{c.totalBookings}</td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    {new Date(c.joinedAt).toLocaleDateString("en-GB", {
+                    {new Date(c.joinedAt).toLocaleDateString("vi-VN", {
                       day: "numeric", month: "short", year: "numeric",
                     })}
                   </td>

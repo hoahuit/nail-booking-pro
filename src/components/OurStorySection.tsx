@@ -1,21 +1,25 @@
 import { motion } from "framer-motion";
 import { BUSINESS } from "@/lib/constants";
 import gallery1 from "@/assets/gallery-1.jpg";
+import Butterfly from "@/components/Butterfly";
 
 const OurStorySection = () => {
   return (
     <section id="story" className="py-28 bg-secondary/40 relative overflow-hidden">
-      {/* 3D floating shapes */}
-      <motion.div
-        className="absolute top-20 right-10 w-32 h-32 border border-border/30 rounded-full pointer-events-none"
-        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
-        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+      {/* Butterfly accents */}
+      <Butterfly
+        color="#8fa882" secondaryColor="#7a9470" size={52}
+        left="85%" top="12%"
+        pathX={[0, -60, -20, -80, 0]} pathY={[0, 30, -20, 50, 0]}
+        pathRotate={[0, -8, 6, -10, 0]}
+        delay={0.3} flapSpeed={0.50} pathDuration={14} opacity={0.28}
       />
-      <motion.div
-        className="absolute bottom-10 left-20 w-20 h-20 border border-warm/20 pointer-events-none"
-        animate={{ y: [0, 10, 0], rotate: [0, -8, 0] }}
-        transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-        style={{ transform: "rotate(45deg)" }}
+      <Butterfly
+        color="#c8a87a" secondaryColor="#b49060" size={38}
+        left="3%" top="60%"
+        pathX={[0, 50, 20, 70, 10, 0]} pathY={[0, -40, -10, -55, -20, 0]}
+        pathRotate={[0, 6, -5, 9, -3, 0]}
+        delay={1.5} flapSpeed={0.44} pathDuration={12} opacity={0.25}
       />
 
       <div className="container mx-auto relative z-10">
