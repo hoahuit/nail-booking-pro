@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -151,6 +151,7 @@ const BookingModal = ({ open, onOpenChange, selectedService }: BookingModalProps
 
   return (
     <Dialog open={open} onOpenChange={(value) => (value ? onOpenChange(true) : reset())}>
+      <DialogTitle className="sr-only">Book Appointment</DialogTitle>
       <DialogContent className="w-full max-w-2xl bg-white border border-gray-200 rounded-lg p-0 gap-0 shadow-xl [&>button]:hidden overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200">
           <div className="flex items-center gap-2">
