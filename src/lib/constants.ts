@@ -9,7 +9,7 @@ export const BUSINESS: BusinessInfo = {
   address: ["184 Whitchurch Rd,", "Cardiff CF14 3JP"],
   mapUrl: "https://maps.app.goo.gl/qAQXwwNKWqHKELEg8",
   instagram: "https://www.instagram.com/kingnails.cardiff/",
-  facebook: "#",
+  facebook: "https://www.facebook.com/KingNailsCardiff",
   hours: [
     { label: "Mon – Sat", time: "9:00am – 6:30pm" },
     { label: "Thursday", time: "9:00am – 7:00pm" },

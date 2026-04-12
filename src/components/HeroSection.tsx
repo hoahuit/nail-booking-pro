@@ -107,7 +107,6 @@ const fadeUp: Variants = {
 const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [paused, setPaused] = useState(false);
 
   const go = useCallback((next: number, dir: number) => {
     setDirection(dir);
@@ -115,10 +114,9 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
   }, []);
 
   useEffect(() => {
-    if (paused) return;
     const id = setInterval(() => go(current + 1, 1), INTERVAL_MS);
     return () => clearInterval(id);
-  }, [current, paused, go]);
+  }, [current, go]);
 
   const slideVariants: Variants = {
     enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0, scale: 1.05 }),
@@ -135,8 +133,6 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
     <section
       id="hero"
       className="relative h-screen min-h-[600px] flex items-center overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
     >
       {/* ── Background slideshow ── */}
       <AnimatePresence initial={false}>

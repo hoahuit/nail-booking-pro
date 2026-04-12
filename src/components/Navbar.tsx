@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X, Phone, Instagram, Facebook } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
 
 interface NavbarProps {
@@ -47,7 +47,7 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
           ))}
         </div>
 
-        {/* Right: phone + book now */}
+        {/* Right: phone + socials + book now */}
         <div className="hidden lg:flex items-center gap-5">
           <a
             href={`tel:${BUSINESS.phone}`}
@@ -57,6 +57,29 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
             <Phone className="w-3.5 h-3.5" />
             {BUSINESS.phone}
           </a>
+
+          {/* Social icons */}
+          <div className="flex items-center gap-3 border-l border-gray-200 pl-5">
+            <a
+              href={BUSINESS.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-pink-500 transition-colors duration-200"
+              aria-label="Instagram"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a
+              href={BUSINESS.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
+              aria-label="Facebook"
+            >
+              <Facebook className="w-4 h-4" />
+            </a>
+          </div>
+
           <button
             onClick={onBookingClick}
             className="bg-gray-900 text-white text-xs tracking-[0.15em] uppercase px-5 py-2.5 hover:bg-gray-700 transition-colors duration-200 flex items-center gap-1.5"
