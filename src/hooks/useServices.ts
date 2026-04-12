@@ -1,13 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { POPULAR_SERVICES } from "@/lib/data/services";
 import type { ServiceCategory, ServiceItem } from "@/lib/types";
-
-const BACKEND = "http://localhost:4000";
-function resolveImageUrl(path: string | null | undefined): string {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return `${BACKEND}${path}`;
-}
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 interface ApiService {
   id: string;
@@ -42,7 +36,7 @@ async function fetchServices(): Promise<ServiceCategory[]> {
       name: svc.name,
       price: `$${svc.price}`,
       duration: `${svc.duration}m`,
-      image: resolveImageUrl(svc.image),
+      image: resolveAssetUrl(svc.image),
       categoryKey: key,
     });
   }

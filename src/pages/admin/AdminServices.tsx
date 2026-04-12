@@ -23,14 +23,7 @@ import {
   type ApiService,
   type ServicePayload,
 } from "@/hooks/useAdminServices";
-
-// Ảnh lưu dạng path tương đối → prefix backend khi hiển thị
-const BACKEND = "http://localhost:4000";
-function resolveImageUrl(path: string | null | undefined): string {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return `${BACKEND}${path}`;
-}
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 // ── Service Form Modal ────────────────────────────────────────────────────────
 
@@ -67,7 +60,7 @@ function ServiceModal({
   );
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(resolveImageUrl(initial?.image));
+  const [imagePreview, setImagePreview] = useState<string>(resolveAssetUrl(initial?.image));
 
   const { data: cats } = useServiceCategories();
   const create       = useCreateService();
@@ -232,7 +225,7 @@ function ServiceModal({
                 {imageFile && (
                   <button
                     type="button"
-                    onClick={() => { setImageFile(null); setImagePreview(resolveImageUrl(initial?.image)); }}
+                    onClick={() => { setImageFile(null); setImagePreview(resolveAssetUrl(initial?.image)); }}
                     className="text-xs text-rose-400 hover:text-rose-600 transition-colors"
                   >
                     Bỏ chọn
@@ -431,7 +424,7 @@ const AdminServices = () => {
                       <td className="px-4 py-3 w-14">
                         {svc.image ? (
                           <img
-                            src={resolveImageUrl(svc.image)}
+                            src={resolveAssetUrl(svc.image)}
                             alt={svc.name}
                             className="w-10 h-10 object-cover rounded-lg"
                           />
