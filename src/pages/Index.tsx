@@ -7,6 +7,7 @@ import GallerySection from "@/components/GallerySection";
 import FeaturesSection from "@/components/FeaturesSection";
 import BookingModal from "@/components/BookingModal";
 import Footer from "@/components/Footer";
+import LocationSection from "@/components/LocationSection";
 import type { ServiceItem } from "@/lib/types";
 
 const Index = () => {
@@ -26,6 +27,7 @@ const Index = () => {
       <OurStorySection />
       <GallerySection />
       <FeaturesSection />
+      <LocationSection />
       <Footer />
       <BookingModal open={bookingOpen} onOpenChange={setBookingOpen} selectedService={selectedService} />
     </div>

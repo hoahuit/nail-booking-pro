@@ -8,11 +8,12 @@ interface NavbarProps {
 }
 
 const navItems = [
-  { label: "Home", id: "hero" },
+  { label: "Home",     id: "hero" },
   { label: "Services", id: "services" },
-  { label: "Our Story", id: "story" },
-  { label: "Gallery", id: "gallery" },
-  { label: "Contact", id: "contact" },
+  { label: "Our Story",id: "story" },
+  { label: "Gallery",  id: "gallery" },
+  { label: "Location", id: "location" },  // thêm dòng này
+  { label: "Contact",  id: "contact" },
 ];
 
 const Navbar = ({ onBookingClick }: NavbarProps) => {
