@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
 import Butterfly from "@/components/Butterfly";
 
@@ -208,20 +208,44 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
             className="font-serif italic mb-4"
             style={{ color: "#c9a227", fontSize: "clamp(18px, 2vw, 26px)" }}
           >
-            luxury nail studio
           </motion.p>
 
           {/* Main heading */}
-          <motion.h1
+          <motion.div
             custom={1}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="font-serif font-bold text-white leading-none mb-6"
-            style={{ fontSize: "clamp(52px, 8vw, 108px)", letterSpacing: "-0.02em" }}
+            className="mb-6"
           >
-            {BUSINESS.name}
-          </motion.h1>
+            <div className="inline-flex flex-col items-start">
+              <Crown
+                style={{
+                  color: "#c9a227",
+                  width: "clamp(24px, 3.5vw, 50px)",
+                  height: "clamp(24px, 3.5vw, 50px)",
+                  marginBottom: "-0.1em",
+                  marginLeft: "0.08em",
+                  filter: "drop-shadow(0 0 8px rgba(201,162,39,0.5))",
+                }}
+              />
+              <span
+                className="font-serif italic text-white block leading-none"
+                style={{ fontSize: "clamp(60px, 9.5vw, 124px)", letterSpacing: "-0.03em" }}
+              >
+                King  <span  style={{
+                  fontSize: "clamp(33px, 3.8vw, 26px)",
+                  letterSpacing: "0.55em",
+                  color: "#c9a227",
+                  textTransform: "uppercase",
+                  paddingBottom: "6px",
+                  borderBottom: "1px solid rgba(201,162,39,0.4)",
+                  marginLeft: "0.08em",
+                }}> Nails</span>
+              </span>
+          
+            </div>
+          </motion.div>
 
           {/* Tagline */}
           <motion.p
