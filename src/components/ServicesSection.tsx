@@ -10,10 +10,16 @@ interface ServicesSectionProps {
 
 export type { ServiceItem };
 
+const ALL_TAB = "__all__";
+
 const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
   const { data: categories = [] } = useServices();
-  const [activeTab, setActiveTab] = useState("fullset");
-  const activeCat = categories.find((c) => c.key === activeTab) || categories[0];
+  const [activeTab, setActiveTab] = useState(ALL_TAB);
+
+  const allItems: ServiceItem[] = categories.flatMap((c) => c.items);
+  const activeCat = activeTab === ALL_TAB
+    ? { key: ALL_TAB, label: "All", items: allItems }
+    : (categories.find((c) => c.key === activeTab) ?? categories[0]);
 
   if (!activeCat) return null;
 
@@ -49,7 +55,7 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
         {/* Tabs */}
         <div className="mb-14 overflow-x-auto">
           <div className="flex items-center justify-start md:justify-center border-b border-border w-fit md:w-full">
-            {categories.map((cat) => (
+            {[{ key: ALL_TAB, label: "All" }, ...categories].map((cat) => (
               <button
                 key={cat.key}
                 onClick={() => setActiveTab(cat.key)}

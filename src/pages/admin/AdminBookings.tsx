@@ -1,149 +1,302 @@
-import { useState, useMemo } from "react";
+﻿import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Search,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  Calendar,
+  Clock,
+  User,
+  Phone,
+  Mail,
+  StickyNote,
   CheckCircle2,
   XCircle,
-  CalendarCheck,
-  Star,
-  ChevronDown,
+  AlertCircle,
+  Ban,
+  Loader2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { mockBookings, mockCustomers } from "@/lib/mockAdminData";
-import type { Booking, BookingStatus, Customer } from "@/lib/adminTypes";
+import { useAdminBookings, useUpdateBookingStatus } from "@/hooks/useAdminBookings";
+import type { ApiBooking, BookingStatus } from "@/lib/adminTypes";
 
-const STATUS_TABS: { key: BookingStatus | "all"; label: string }[] = [
-  { key: "all",       label: "Tất cả" },
-  { key: "pending",   label: "Chờ xác nhận" },
-  { key: "confirmed", label: "Đã xác nhận" },
-  { key: "completed", label: "Hoàn thành" },
-  { key: "cancelled", label: "Đã hủy" },
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const STATUS_TABS: { key: BookingStatus | "ALL"; label: string }[] = [
+  { key: "ALL",       label: "Tất cả" },
+  { key: "PENDING",   label: "Chờ xác nhận" },
+  { key: "CONFIRMED", label: "Đã xác nhận" },
+  { key: "COMPLETED", label: "Hoàn thành" },
+  { key: "CANCELLED", label: "Đã hủy" },
+  { key: "NO_SHOW",   label: "Vắng mặt" },
 ];
 
-const statusColors: Record<BookingStatus, string> = {
-  pending:   "bg-amber-100 text-amber-700 border-amber-200",
-  confirmed: "bg-blue-100 text-blue-700 border-blue-200",
-  completed: "bg-green-100 text-green-700 border-green-200",
-  cancelled: "bg-red-100 text-red-600 border-red-200",
+const STATUS_STYLE: Record<BookingStatus, string> = {
+  PENDING:   "bg-amber-50 text-amber-600 border border-amber-200",
+  CONFIRMED: "bg-blue-50 text-blue-600 border border-blue-200",
+  COMPLETED: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+  CANCELLED: "bg-red-50 text-red-500 border border-red-200",
+  NO_SHOW:   "bg-slate-100 text-slate-500 border border-slate-200",
 };
 
-const statusLabels: Record<BookingStatus, string> = {
-  pending:   "Chờ xác nhận",
-  confirmed: "Đã xác nhận",
-  completed: "Hoàn thành",
-  cancelled: "Đã hủy",
+const STATUS_LABEL: Record<BookingStatus, string> = {
+  PENDING:   "Chờ xác nhận",
+  CONFIRMED: "Đã xác nhận",
+  COMPLETED: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+  NO_SHOW:   "Vắng mặt",
 };
 
-const POINTS_PER_BOOKING = 10;
+// Status transitions: what can each status be moved to
+const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
+  PENDING:   ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["COMPLETED", "NO_SHOW", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+  NO_SHOW:   [],
+};
 
-const AdminBookings = () => {
-  const [bookings,  setBookings]  = useLocalStorage<Booking[]>("admin_bookings",  mockBookings);
-  const [customers, setCustomers] = useLocalStorage<Customer[]>("admin_customers", mockCustomers);
-
-  const [search,       setSearch]       = useState("");
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
-  const [expandedId,   setExpandedId]   = useState<string | null>(null);
-
-  const filtered = useMemo(() => {
-    return bookings
-      .filter((b) => {
-        if (statusFilter !== "all" && b.status !== statusFilter) return false;
-        if (search) {
-          const q = search.toLowerCase();
-          return (
-            b.customerName.toLowerCase().includes(q) ||
-            b.phone.includes(q) ||
-            b.service.toLowerCase().includes(q)
-          );
-        }
-        return true;
-      })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [bookings, statusFilter, search]);
-
-  const tabCount = (key: BookingStatus | "all") =>
-    key === "all"
-      ? bookings.length
-      : bookings.filter((b) => b.status === key).length;
-
-  const updateStatus = (id: string, status: BookingStatus) => {
-    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
-    toast.success(`Lịch đã chuyển sang: ${statusLabels[status]}`);
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }),
+    time: d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
   };
+}
 
-  const awardPoints = (booking: Booking) => {
-    if (booking.pointsAwarded) {
-      toast.info("Điểm đã được cộng trước đó");
-      return;
-    }
-    setBookings((prev) =>
-      prev.map((b) => (b.id === booking.id ? { ...b, pointsAwarded: true } : b))
-    );
-    setCustomers((prev) => {
-      const exists = prev.find((c) => c.phone === booking.phone);
-      if (exists) {
-        return prev.map((c) =>
-          c.phone === booking.phone
-            ? { ...c, points: c.points + POINTS_PER_BOOKING, totalBookings: c.totalBookings + 1 }
-            : c
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: `c${Date.now()}`,
-          name: booking.customerName,
-          phone: booking.phone,
-          email: booking.email,
-          points: POINTS_PER_BOOKING,
-          totalBookings: 1,
-          joinedAt: new Date().toISOString(),
-        },
-      ];
-    });
-    toast.success(`+${POINTS_PER_BOOKING} điểm đã cộng cho ${booking.customerName}`);
+// ── Detail Drawer ─────────────────────────────────────────────────────────────
+
+function BookingRow({
+  booking,
+  index,
+}: {
+  booking: ApiBooking;
+  index: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const updateStatus = useUpdateBookingStatus();
+  const start = formatDateTime(booking.startTime);
+  const nextStatuses = TRANSITIONS[booking.status] ?? [];
+
+  const handleStatus = (status: BookingStatus) => {
+    updateStatus.mutate({ id: booking.id, status });
   };
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <>
+      <motion.tr
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.02 }}
+        className={`hover:bg-slate-50 transition-colors cursor-pointer ${expanded ? "bg-slate-50" : ""}`}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <td className="px-4 py-3.5 text-xs font-mono text-slate-400 whitespace-nowrap">
+          #{booking.id.slice(0, 8)}
+        </td>
+        <td className="px-4 py-3.5 whitespace-nowrap">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-200 to-pink-300 flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-bold text-rose-700">{booking.customerName.charAt(0).toUpperCase()}</span>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 text-sm">{booking.customerName}</p>
+              <p className="text-xs text-slate-400">{booking.customerPhone}</p>
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3.5 text-sm text-slate-500 max-w-[160px] truncate">
+          {booking.service.name}
+        </td>
+        <td className="px-4 py-3.5 whitespace-nowrap">
+          <p className="text-sm text-slate-700">{start.date}</p>
+          <p className="text-xs text-slate-400">{start.time}</p>
+        </td>
+        <td className="px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
+          {booking.staff?.name ?? <span className="italic text-slate-400">Bất kỳ</span>}
+        </td>
+        <td className="px-4 py-3.5 font-semibold text-slate-700 whitespace-nowrap">
+          ${booking.totalPrice}
+        </td>
+        <td className="px-4 py-3.5">
+          <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_STYLE[booking.status]}`}>
+            {STATUS_LABEL[booking.status]}
+          </span>
+        </td>
+        <td className="px-4 py-4">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            {nextStatuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => handleStatus(s)}
+                disabled={updateStatus.isPending}
+                title={STATUS_LABEL[s]}
+                className={`p-1.5 rounded-md transition-colors disabled:opacity-50 ${
+                  s === "CONFIRMED" ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                  : s === "COMPLETED" ? "bg-green-50 text-green-600 hover:bg-green-100"
+                  : s === "CANCELLED" ? "bg-red-50 text-red-500 hover:bg-red-100"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {updateStatus.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : s === "CONFIRMED" ? (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                ) : s === "COMPLETED" ? (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                ) : s === "NO_SHOW" ? (
+                  <AlertCircle className="w-3.5 h-3.5" />
+                ) : (
+                  <Ban className="w-3.5 h-3.5" />
+                )}
+              </button>
+            ))}
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+              className="p-1.5 rounded-md bg-slate-100 text-slate-400 hover:bg-slate-200 transition-colors"
+            >
+              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </td>
+      </motion.tr>
+
+      {/* Expanded detail row */}
+      {expanded && (
+        <tr className="bg-slate-50">
+          <td colSpan={8} className="px-6 py-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="flex items-start gap-2">
+                <Mail className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Email</p>
+                  <p className="text-slate-700">{booking.customerEmail ?? "—"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Clock className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Thời lượng</p>
+                  <p className="text-slate-700">{booking.duration} phút</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Calendar className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Kết thúc</p>
+                  <p className="text-slate-700">{formatDateTime(booking.endTime).time}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <StickyNote className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Ghi chú</p>
+                  <p className="text-slate-700">{booking.notes ?? "—"}</p>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+const AdminBookings = () => {
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | "ALL">("ALL");
+  const [search, setSearch]       = useState("");
+  const [date, setDate]           = useState("");
+  const [page, setPage]           = useState(1);
+  const LIMIT = 20;
+
+  const { data, isLoading, isError, refetch, isFetching } = useAdminBookings({
+    status: statusFilter,
+    search: search || undefined,
+    date:   date   || undefined,
+    page,
+    limit: LIMIT,
+  });
+
+  const bookings = data?.data ?? [];
+  const meta     = data?.meta;
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleStatus = (key: BookingStatus | "ALL") => {
+    setStatusFilter(key);
+    setPage(1);
+  };
+
+  return (
+    <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-3xl md:text-4xl text-foreground">Lịch đặt</h1>
-        <p className="mt-1 text-sm text-muted-foreground font-light">
-          {bookings.length} tổng · {bookings.filter((b) => b.status === "pending").length} chờ xác nhận
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Lịch đặt</h1>
+          <p className="mt-0.5 text-sm text-slate-400">
+            {meta ? `${meta.total} lịch đặt tổng cộng` : "Đang tải..."}
+          </p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Làm mới
+        </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Tìm theo tên, SĐT, email…"
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-rose-300 focus:ring-1 focus:ring-rose-100 transition-colors placeholder:text-slate-400 shadow-sm"
+          />
+        </div>
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm theo tên, SĐT hoặc dịch vụ…"
-          className="w-full pl-11 pr-4 py-3 text-sm bg-card border border-border outline-none focus:border-foreground/40 transition-colors placeholder:text-muted-foreground/50"
+          type="date"
+          value={date}
+          onChange={(e) => { setDate(e.target.value); setPage(1); }}
+          className="px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-rose-300 transition-colors text-slate-700 shadow-sm"
         />
+        {date && (
+          <button
+            onClick={() => { setDate(""); setPage(1); }}
+            className="px-3 py-2.5 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            Xoá ngày
+          </button>
+        )}
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-0 border-b border-border overflow-x-auto">
+      <div className="flex gap-0 border-b border-slate-200 overflow-x-auto">
         {STATUS_TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setStatusFilter(t.key)}
-            className={`relative flex-shrink-0 px-4 py-3.5 text-[10px] tracking-[0.12em] uppercase font-medium transition-colors ${
+            onClick={() => handleStatus(t.key)}
+            className={`relative flex-shrink-0 px-4 py-3 text-xs font-medium transition-colors ${
               statusFilter === t.key
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground/70"
+                ? "text-rose-600"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
             {t.label}
-            <span className="ml-1.5 text-[9px] opacity-60">({tabCount(t.key)})</span>
             {statusFilter === t.key && (
               <motion.div
                 layoutId="booking-tab"
-                className="absolute bottom-0 inset-x-0 h-[2px] bg-foreground"
+                className="absolute bottom-0 inset-x-0 h-0.5 bg-rose-500 rounded-full"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             )}
@@ -152,172 +305,75 @@ const AdminBookings = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-card shadow-subtle overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-secondary/40 border-b border-border">
-                {["ID", "Khách hàng", "Điện thoại", "Dịch vụ", "Ngày", "Giờ", "Giá", "Trạng thái", "Thao tác"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3.5 text-left text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-14 text-center text-muted-foreground text-sm">
-                    Không có lịch đặt nào
-                  </td>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20 gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            <span className="text-sm text-slate-400">Đang tải lịch đặt…</span>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <XCircle className="w-8 h-8 text-red-300" />
+            <p className="text-sm text-slate-500">Không thể tải dữ liệu. Kiểm tra kết nối backend.</p>
+            <button onClick={() => refetch()} className="text-xs text-rose-500 underline">Thử lại</button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  {["ID", "Khách hàng", "Dịch vụ", "Ngày & Giờ", "Nhân viên", "Giá", "Trạng thái", "Thao tác"].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              )}
-              {filtered.map((b, i) => (
-                <>
-                  <motion.tr
-                    key={b.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.025 }}
-                    className={`hover:bg-secondary/30 transition-colors cursor-pointer ${
-                      expandedId === b.id ? "bg-secondary/20" : ""
-                    }`}
-                    onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
-                  >
-                    <td className="px-4 py-4 text-muted-foreground text-xs font-mono">
-                      #{b.id}
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-14 text-center text-slate-400 text-sm">
+                      Không có lịch đặt nào
                     </td>
-                    <td className="px-4 py-4 font-medium text-foreground whitespace-nowrap">
-                      {b.customerName}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
-                      {b.phone}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground max-w-[160px] truncate">
-                      {b.service}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
-                      {b.date}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">{b.time}</td>
-                    <td className="px-4 py-4 font-medium text-foreground">{b.price}</td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium border ${statusColors[b.status]}`}
-                      >
-                        {statusLabels[b.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                        {b.status === "pending" && (
-                          <button
-                            onClick={() => updateStatus(b.id, "confirmed")}
-                            title="Xác nhận lịch"
-                            className="p-2 hover:bg-blue-50 text-blue-500 rounded transition-colors"
-                          >
-                            <CalendarCheck className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {(b.status === "pending" || b.status === "confirmed") && (
-                          <button
-                            onClick={() => updateStatus(b.id, "completed")}
-                            title="Đánh dấu hoàn thành"
-                            className="p-2 hover:bg-green-50 text-green-500 rounded transition-colors"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {b.status === "completed" && (
-                          <button
-                            onClick={() => awardPoints(b)}
-                            title={b.pointsAwarded ? "Điểm đã cộng" : "Cộng 10 điểm"}
-                            className={`p-2 rounded transition-colors ${
-                              b.pointsAwarded
-                                ? "text-muted-foreground/30 cursor-not-allowed"
-                                : "hover:bg-amber-50 text-amber-500"
-                            }`}
-                          >
-                            <Star
-                              className={`w-3.5 h-3.5 ${b.pointsAwarded ? "fill-muted-foreground/30" : ""}`}
-                            />
-                          </button>
-                        )}
-                        {b.status !== "cancelled" && b.status !== "completed" && (
-                          <button
-                            onClick={() => updateStatus(b.id, "cancelled")}
-                            title="Hủy lịch"
-                            className="p-2 hover:bg-red-50 text-red-400 rounded transition-colors"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
-                          className="p-2 text-muted-foreground/50 hover:text-muted-foreground rounded transition-colors"
-                        >
-                          <ChevronDown
-                            className={`w-3.5 h-3.5 transition-transform ${expandedId === b.id ? "rotate-180" : ""}`}
-                          />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-
-                  {/* Expanded detail row */}
-                  {expandedId === b.id && (
-                    <tr key={`${b.id}-expand`} className="bg-secondary/20">
-                      <td colSpan={9} className="px-6 py-4">
-                        <div className="grid sm:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Email
-                            </p>
-                            <p className="text-foreground">{b.email || "—"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Nhân viên
-                            </p>
-                            <p className="text-foreground capitalize">{b.staff}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Điểm
-                            </p>
-                            <p className="text-foreground">
-                              {b.pointsAwarded ? "✓ Đã cộng 10 điểm" : "Chưa cộng điểm"}
-                            </p>
-                          </div>
-                          {b.notes && (
-                            <div className="sm:col-span-3">
-                              <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                                Ghi chú khách hàng
-                              </p>
-                              <p className="text-foreground italic">"{b.notes}"</p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground mb-1">
-                              Ngày tạo
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              {new Date(b.createdAt).toLocaleString("vi-VN")}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </tr>
+                ) : (
+                  bookings.map((b, i) => (
+                    <BookingRow key={b.id} booking={b} index={i} />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Pagination */}
+      {meta && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <p className="text-slate-400 text-xs">
+            Trang {meta.page} / {meta.totalPages} &nbsp;·&nbsp; {meta.total} kết quả
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isFetching}
+              className="px-3.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors shadow-sm"
+            >
+              Trước
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+              disabled={page === meta.totalPages || isFetching}
+              className="px-3.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors shadow-sm"
+            >
+              Tiếp
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

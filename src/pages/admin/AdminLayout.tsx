@@ -1,21 +1,44 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useLogout } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   CalendarDays,
+  Scissors,
   Star,
   ExternalLink,
   LogOut,
   Menu,
   X,
+  Bell,
+  Search,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const navLinks = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
-  { to: "/admin/bookings", icon: CalendarDays, label: "Lịch đặt" },
-  { to: "/admin/points", icon: Star, label: "Điểm thưởng" },
+const navGroups = [
+  {
+    label: "Quản lý chính",
+    links: [
+      { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
+      { to: "/admin/bookings",  icon: CalendarDays,    label: "Lịch đặt" },
+    ],
+  },
+  {
+    label: "Cửa hàng",
+    links: [
+      { to: "/admin/services", icon: Scissors, label: "Dịch vụ" },
+      { to: "/admin/points",   icon: Star,     label: "Điểm thưởng" },
+    ],
+  },
 ];
+
+const PAGE_LABELS: Record<string, string> = {
+  "/admin/dashboard": "Tổng quan",
+  "/admin/bookings":  "Lịch đặt",
+  "/admin/services":  "Dịch vụ",
+  "/admin/points":    "Điểm thưởng",
+};
 
 const SidebarContent = ({
   onClose,
@@ -24,84 +47,103 @@ const SidebarContent = ({
   onClose?: () => void;
   onLogout: () => void;
 }) => (
-  <>
+  <div className="flex flex-col h-full">
     {/* Brand */}
-    <div className="flex items-center justify-between px-6 py-6 border-b border-primary-foreground/10">
-      <div>
-        <span className="font-serif text-xl text-primary-foreground tracking-wide">
-          LUXE NAILS
-        </span>
-        <p className="text-[9px] tracking-[0.25em] uppercase text-primary-foreground/30 mt-0.5">
-          Cổng quản trị
-        </p>
+    <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center shadow-sm">
+          <span className="text-white text-xs font-bold">LN</span>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-800 text-sm leading-tight">Luxe Nails</p>
+          <p className="text-[10px] text-slate-400 leading-tight">Quản trị viên</p>
+        </div>
       </div>
       {onClose && (
         <button
           onClick={onClose}
-          className="text-primary-foreground/50 hover:text-primary-foreground transition-colors"
+          className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       )}
     </div>
 
     {/* Navigation */}
-    <nav className="flex-1 px-3 py-6 space-y-0.5">
-      {navLinks.map(({ to, icon: Icon, label }) => (
-        <NavLink
-          key={to}
-          to={to}
-          onClick={onClose}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3.5 text-[10px] tracking-[0.16em] uppercase transition-all duration-150 ${
-              isActive
-                ? "text-primary-foreground border-l-2 border-primary-foreground/60"
-                : "text-primary-foreground/45 hover:text-primary-foreground/80 border-l-2 border-transparent"
-            }`
-          }
-        >
-          <Icon className="w-4 h-4 flex-shrink-0" />
-          {label}
-        </NavLink>
+    <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+      {navGroups.map((group) => (
+        <div key={group.label}>
+          <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            {group.label}
+          </p>
+          <div className="space-y-0.5">
+            {group.links.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                    isActive
+                      ? "bg-rose-50 text-rose-600"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-rose-500" : "text-slate-400"}`} />
+                    <span className="flex-1">{label}</span>
+                    {isActive && <ChevronRight className="w-3 h-3 text-rose-400 opacity-60" />}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </div>
       ))}
     </nav>
 
     {/* Bottom */}
-    <div className="px-3 pb-6 space-y-0.5 border-t border-primary-foreground/10 pt-4">
+    <div className="px-3 pb-4 border-t border-slate-100 pt-3 space-y-0.5">
       <a
         href="/"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 px-4 py-3 text-[10px] tracking-[0.16em] uppercase text-primary-foreground/35 hover:text-primary-foreground/65 transition-colors"
+        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
       >
-        <ExternalLink className="w-4 h-4" />
+        <ExternalLink className="w-4 h-4 text-slate-400" />
         Xem trang khách
       </a>
       <button
         onClick={onLogout}
-        className="w-full flex items-center gap-3 px-4 py-3 text-[10px] tracking-[0.16em] uppercase text-primary-foreground/35 hover:text-red-400 transition-colors"
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
       >
-        <LogOut className="w-4 h-4" />
+        <LogOut className="w-4 h-4 text-slate-400" />
         Đăng xuất
       </button>
     </div>
-  </>
+  </div>
 );
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const logout    = useLogout();
+
+  const pageLabel = PAGE_LABELS[location.pathname] ?? "Quản trị";
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_auth");
+    logout();
     toast.info("Đã đăng xuất");
     navigate("/admin/login");
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(35_12%_95%)]">
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-foreground fixed top-0 bottom-0 left-0 z-40">
+      <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-slate-100 fixed top-0 bottom-0 left-0 z-40 shadow-sm">
         <SidebarContent onLogout={handleLogout} />
       </aside>
 
@@ -109,10 +151,10 @@ const AdminLayout = () => {
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="fixed top-0 left-0 bottom-0 z-50 w-64 bg-foreground flex flex-col lg:hidden">
+          <aside className="fixed top-0 left-0 bottom-0 z-50 w-60 bg-white flex flex-col lg:hidden shadow-xl">
             <SidebarContent
               onClose={() => setSidebarOpen(false)}
               onLogout={handleLogout}
@@ -122,27 +164,50 @@ const AdminLayout = () => {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-5 py-4 bg-foreground border-b border-primary-foreground/10 sticky top-0 z-30">
-          <span className="font-serif text-lg text-primary-foreground">
-            LUXE NAILS
-          </span>
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-primary-foreground/60 hover:text-primary-foreground transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+      <div className="lg:pl-60 flex flex-col min-h-screen w-full">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5">
+            {/* Left: mobile menu + breadcrumb */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-slate-500 hover:text-slate-700 transition-colors p-1"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div className="hidden lg:flex items-center gap-2 text-sm">
+                <span className="text-slate-400">Luxe Nails</span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                <span className="font-medium text-slate-700">{pageLabel}</span>
+              </div>
+              <span className="lg:hidden font-semibold text-slate-700">{pageLabel}</span>
+            </div>
+
+            {/* Right: search + bell + avatar */}
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-400">
+                <Search className="w-3.5 h-3.5" />
+                <span className="text-xs">Tìm kiếm…</span>
+              </div>
+              <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+              </button>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center shadow-sm cursor-pointer">
+                <span className="text-white text-xs font-bold">A</span>
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* Page */}
-        <main className="flex-1 p-6 md:p-8 lg:p-10">
+        <main className="flex-1 p-5 md:p-7">
           <Outlet />
         </main>
 
-        <footer className="px-8 py-4 text-[10px] tracking-wider text-muted-foreground/40 uppercase text-right">
-          Luxe Nails Quản trị · {new Date().getFullYear()}
+        <footer className="px-7 py-3 text-[10px] text-slate-300 text-right border-t border-slate-100">
+          Luxe Nails Admin · {new Date().getFullYear()}
         </footer>
       </div>
     </div>

@@ -1,4 +1,28 @@
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+// API status values from backend (uppercase)
+export type BookingStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+
+export interface ApiBooking {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  serviceId: string;
+  staffId: string | null;
+  startTime: string;   // ISO
+  endTime: string;     // ISO
+  duration: number;    // minutes
+  totalPrice: string;
+  status: BookingStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  service: { name: string; category: string };
+  staff: { name: string } | null;
+  user: { name: string; email: string } | null;
+}
+
+// ── Legacy shape kept for AdminPoints (mock data) ──────────────────────────────
+export type LegacyBookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
 export interface Booking {
   id: string;
@@ -7,13 +31,13 @@ export interface Booking {
   email: string;
   service: string;
   price: string;
-  date: string;        // YYYY-MM-DD
-  time: string;        // HH:MM
+  date: string;
+  time: string;
   staff: string;
-  status: BookingStatus;
+  status: LegacyBookingStatus;
   notes?: string;
   pointsAwarded: boolean;
-  createdAt: string;   // ISO
+  createdAt: string;
 }
 
 export interface Customer {
@@ -23,7 +47,7 @@ export interface Customer {
   email: string;
   points: number;
   totalBookings: number;
-  joinedAt: string;    // ISO
+  joinedAt: string;
 }
 
 export interface PointTransaction {
@@ -31,8 +55,9 @@ export interface PointTransaction {
   customerId: string;
   customerName: string;
   phone: string;
-  delta: number;         // positive = add, negative = deduct
+  delta: number;
   reason: string;
   adminNote?: string;
-  createdAt: string;     // ISO
+  createdAt: string;
 }
+

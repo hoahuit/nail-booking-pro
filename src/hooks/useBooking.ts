@@ -2,27 +2,51 @@ import { useMutation } from "@tanstack/react-query";
 import type { BookingPayload, Booking } from "@/lib/types";
 import { toast } from "sonner";
 
-/**
- * Hook to submit a booking.
- * Currently simulates success — replace mutationFn with actual API call.
- *
- * Example:
- *   mutationFn: (payload) => fetch("/api/bookings", { method: "POST", body: JSON.stringify(payload) }).then(r => r.json())
- */
+async function createBookingApi(payload: BookingPayload): Promise<Booking> {
+
+  const dateObj = new Date(payload.date);
+  const [hours, minutes] = payload.time.split(":").map(Number);
+  dateObj.setHours(hours, minutes, 0, 0);
+
+  const body: Record<string, unknown> = {
+    serviceId: payload.service.id,
+    startTime: dateObj.toISOString(),
+    customerName: payload.customer.name,
+    customerPhone: payload.customer.phone,
+    customerEmail: payload.customer.email,
+  };
+
+  if (payload.note) body.notes = payload.note;
+  if (payload.staffId && payload.staffId !== "any") body.staffId = payload.staffId;
+
+  const res = await fetch("/api/v1/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 409) {
+    throw new Error("This time slot is already booked. Please choose a different time.");
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Booking failed (${res.status})`);
+  }
+
+  const json = await res.json();
+  // Normalise backend response to match our Booking type
+  return {
+    ...payload,
+    id: json.data?.id ?? json.id ?? crypto.randomUUID(),
+    status: json.data?.status ?? "pending",
+    createdAt: json.data?.createdAt ?? new Date().toISOString(),
+  };
+}
+
 export function useCreateBooking() {
   return useMutation<Booking, Error, BookingPayload>({
-    mutationFn: async (payload) => {
-      // Simulate network delay
-      await new Promise((r) => setTimeout(r, 600));
-
-      // Return mock booking
-      return {
-        ...payload,
-        id: crypto.randomUUID(),
-        status: "pending" as const,
-        createdAt: new Date().toISOString(),
-      };
-    },
+    mutationFn: createBookingApi,
     onSuccess: () => {
       toast.success("Appointment booked successfully!");
     },
@@ -31,3 +55,4 @@ export function useCreateBooking() {
     },
   });
 }
+

@@ -1,33 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-// TODO: replace with API call — POST /api/admin/auth
-const ADMIN_PASSWORD = "luxe2026";
+import { useLogin } from "@/hooks/useAuth";
 
 const AdminLogin = () => {
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [show, setShow]         = useState(false);
   const navigate = useNavigate();
+  const login    = useLogin();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        localStorage.setItem("admin_auth", "true");
-        toast.success("Chào mừng trở lại!");
-        navigate("/admin/dashboard");
-      } else {
-        toast.error("Mật khẩu không đúng");
-      }
-      setLoading(false);
-    }, 400);
+    const result = await login.mutateAsync({ email, password }).catch(() => null);
+    if (result) {
+      navigate("/admin/dashboard");
+    }
   };
 
   return (
@@ -48,6 +39,28 @@ const AdminLogin = () => {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
             <Label
+              htmlFor="email"
+              className="text-[10px] tracking-[0.18em] uppercase text-primary-foreground/45"
+            >
+              Email
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/25" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-11 h-12 rounded-none bg-primary-foreground/[0.06] border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/25 focus-visible:ring-0 focus-visible:border-primary-foreground/35"
+                placeholder="admin@example.com"
+                autoFocus
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label
               htmlFor="password"
               className="text-[10px] tracking-[0.18em] uppercase text-primary-foreground/45"
             >
@@ -61,8 +74,8 @@ const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-11 pr-11 h-12 rounded-none bg-primary-foreground/[0.06] border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/25 focus-visible:ring-0 focus-visible:border-primary-foreground/35"
-                placeholder="Nhập mật khẩu quản trị"
-                autoFocus
+                placeholder="Nhập mật khẩu"
+                required
               />
               <button
                 type="button"
@@ -76,10 +89,10 @@ const AdminLogin = () => {
 
           <Button
             type="submit"
-            disabled={loading || !password}
+            disabled={login.isPending || !email || !password}
             className="w-full rounded-none h-12 bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/20 text-[10px] tracking-[0.22em] uppercase disabled:opacity-30 transition-colors"
           >
-            {loading ? "Đang đăng nhập…" : "Đăng nhập"}
+            {login.isPending ? "Đang đăng nhập…" : "Đăng nhập"}
           </Button>
         </form>
 

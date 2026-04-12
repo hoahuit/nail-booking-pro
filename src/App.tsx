@@ -9,12 +9,15 @@ import AdminLogin from "./pages/admin/AdminLogin.tsx";
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
 import AdminBookings from "./pages/admin/AdminBookings.tsx";
+import AdminServices from "./pages/admin/AdminServices.tsx";
 import AdminPoints from "./pages/admin/AdminPoints.tsx";
+
+import { getToken } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
 
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
-  const isAuth = localStorage.getItem("admin_auth") === "true";
+  const isAuth = !!getToken();
   return isAuth ? <>{children}</> : <Navigate to="/admin/login" replace />;
 };
 
@@ -42,6 +45,7 @@ const App = () => (
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="bookings"  element={<AdminBookings />} />
+            <Route path="services"  element={<AdminServices />} />
             <Route path="points"    element={<AdminPoints />} />
           </Route>
 

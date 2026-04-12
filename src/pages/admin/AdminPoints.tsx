@@ -77,7 +77,7 @@ const AdminPoints = () => {
   const customerTxs = transactions.filter((t) => found && t.phone === found.phone);
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="font-serif text-3xl md:text-4xl text-foreground">Quản lý điểm</h1>
