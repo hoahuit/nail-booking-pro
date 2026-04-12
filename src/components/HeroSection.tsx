@@ -23,7 +23,7 @@ const slides = [
   { src: gallery1, alt: "Delicate nail art", label: "Nail Art" },
 ];
 
-const INTERVAL_MS = 2500;
+const INTERVAL_MS = 2200;
 
 const stats = [
   { value: "8+", label: "Years of Excellence" },
