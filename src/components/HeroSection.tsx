@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,7 +23,7 @@ const slides = [
   { src: gallery1, alt: "Delicate nail art", label: "Nail Art" },
 ];
 
-const INTERVAL_MS = 3500;
+const INTERVAL_MS = 2500;
 
 const stats = [
   { value: "8+", label: "Years of Excellence" },
@@ -31,71 +31,63 @@ const stats = [
   { value: "5★", label: "Average Rating" },
 ];
 
-/* ── Pre-defined butterfly flight configs — European pastel palette ── */
+/* ── Pre-defined butterfly flight configs — lightened for dark hero ── */
 const BUTTERFLIES = [
   {
-    // dusty rose — large, slow, dreamy
-    color: "#c9857a", secondaryColor: "#b86d66", size: 78,
+    color: "#f0b8b0", secondaryColor: "#e8a0a0", size: 78,
     left: "6%", top: "18%",
     pathX: [0, 90, 40, 120, 20, 0], pathY: [0, -50, 30, -10, 50, 0],
     pathRotate: [0, 10, -8, 12, -5, 0],
-    delay: 0, flapSpeed: 0.52, pathDuration: 18, opacity: 0.52,
+    delay: 0, flapSpeed: 0.52, pathDuration: 18, opacity: 0.38,
   },
   {
-    // blush petal
-    color: "#dbaaa4", secondaryColor: "#cc9490", size: 52,
+    color: "#f5c8c4", secondaryColor: "#e8b0b0", size: 52,
     left: "78%", top: "10%",
     pathX: [0, -60, -20, -90, -30, 0], pathY: [0, 40, -20, 60, -10, 0],
     pathRotate: [0, -8, 6, -12, 4, 0],
-    delay: 1.8, flapSpeed: 0.46, pathDuration: 14, opacity: 0.48,
+    delay: 1.8, flapSpeed: 0.46, pathDuration: 14, opacity: 0.34,
   },
   {
-    // sage green — earthy European
-    color: "#8fa882", secondaryColor: "#7a9470", size: 65,
+    color: "#b8d8b0", secondaryColor: "#a0c898", size: 65,
     left: "55%", top: "72%",
     pathX: [0, -50, 30, -80, 10, 0], pathY: [0, -60, -20, -80, -30, 0],
     pathRotate: [0, 6, -10, 8, -6, 0],
-    delay: 0.7, flapSpeed: 0.58, pathDuration: 19, opacity: 0.42,
+    delay: 0.7, flapSpeed: 0.58, pathDuration: 19, opacity: 0.30,
   },
   {
-    // warm champagne / gold
-    color: "#c8a87a", secondaryColor: "#b49060", size: 42,
+    color: "#e8d090", secondaryColor: "#d8b870", size: 42,
     left: "30%", top: "80%",
     pathX: [0, 70, 30, 90, 20, 0], pathY: [0, -40, -70, -30, -80, 0],
     pathRotate: [0, -5, 9, -7, 5, 0],
-    delay: 2.3, flapSpeed: 0.40, pathDuration: 13, opacity: 0.45,
+    delay: 2.3, flapSpeed: 0.40, pathDuration: 13, opacity: 0.36,
   },
   {
-    // soft mauve / lilac
-    color: "#b8a4c8", secondaryColor: "#a890ba", size: 58,
+    color: "#d8c8f0", secondaryColor: "#c8b8e0", size: 58,
     left: "88%", top: "55%",
     pathX: [0, -80, -40, -110, -20, 0], pathY: [0, 30, -40, 10, -60, 0],
     pathRotate: [0, 7, -5, 11, -3, 0],
-    delay: 3.1, flapSpeed: 0.50, pathDuration: 16, opacity: 0.40,
+    delay: 3.1, flapSpeed: 0.50, pathDuration: 16, opacity: 0.30,
   },
   {
-    // powder rose
-    color: "#d0a0a8", secondaryColor: "#c08890", size: 46,
+    color: "#f0c0c8", secondaryColor: "#e0a8b0", size: 46,
     left: "14%", top: "65%",
     pathX: [0, 40, 80, 20, 60, 0], pathY: [0, -50, -20, -70, -40, 0],
     pathRotate: [0, -6, 8, -10, 4, 0],
-    delay: 1.1, flapSpeed: 0.54, pathDuration: 15, opacity: 0.44,
+    delay: 1.1, flapSpeed: 0.54, pathDuration: 15, opacity: 0.32,
   },
   {
-    // dusty lavender
-    color: "#b0aacb", secondaryColor: "#9e97bc", size: 35,
+    color: "#c8c4e8", secondaryColor: "#b8b0d8", size: 35,
     left: "48%", top: "8%",
     pathX: [0, 30, -20, 50, -10, 0], pathY: [0, 30, 60, 20, 50, 0],
     pathRotate: [0, 5, -7, 9, -4, 0],
-    delay: 0.4, flapSpeed: 0.46, pathDuration: 12, opacity: 0.38,
+    delay: 0.4, flapSpeed: 0.46, pathDuration: 12, opacity: 0.28,
   },
   {
-    // warm terracotta hint
-    color: "#c4a088", secondaryColor: "#b48870", size: 38,
+    color: "#e8c8a8", secondaryColor: "#d8b890", size: 38,
     left: "70%", top: "30%",
     pathX: [0, -30, 20, -50, 10, 0], pathY: [0, 40, -10, 50, 20, 0],
     pathRotate: [0, -5, 6, -8, 3, 0],
-    delay: 2.8, flapSpeed: 0.52, pathDuration: 11, opacity: 0.36,
+    delay: 2.8, flapSpeed: 0.52, pathDuration: 11, opacity: 0.28,
   },
 ];
 
@@ -105,7 +97,11 @@ const stagger: Variants = {
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: "easeOut" } },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.75, ease: "easeOut", delay: i * 0.15 },
+  }),
 };
 
 const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
@@ -138,414 +134,197 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex items-center overflow-hidden"
-      style={{
-        background:
-          "linear-gradient(145deg, #fdf8f4 0%, #faf0eb 35%, #f6ebe4 65%, #fdf6f0 100%)",
-      }}
+      className="relative h-screen min-h-[600px] flex items-center overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
     >
-      {/* ── Bokeh glow orbs — warm soft tones ── */}
-      <div
-        className="absolute pointer-events-none rounded-full"
-        style={{
-          width: 560, height: 560, left: "55%", top: "0%",
-          background: "radial-gradient(circle, rgba(201,133,122,0.13) 0%, transparent 70%)",
-          filter: "blur(55px)",
-        }}
-      />
-      <div
-        className="absolute pointer-events-none rounded-full"
-        style={{
-          width: 420, height: 420, left: "5%", top: "35%",
-          background: "radial-gradient(circle, rgba(184,164,200,0.12) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-      <div
-        className="absolute pointer-events-none rounded-full"
-        style={{
-          width: 340, height: 340, left: "35%", top: "58%",
-          background: "radial-gradient(circle, rgba(200,168,122,0.10) 0%, transparent 70%)",
-          filter: "blur(50px)",
-        }}
-      />
+      {/* ── Background slideshow ── */}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={current}
+          initial={{ scale: 1.06, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1, transition: { duration: 1.4, ease: "easeOut" } }}
+          exit={{ scale: 0.97, opacity: 0, transition: { duration: 0.8, ease: "easeIn" } }}
+          className="absolute inset-0"
+        >
+          <img
+            src={slides[current].src}
+            alt={slides[current].alt}
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* ── Subtle linen dot pattern ── */}
+      {/* ── Overlays ── */}
+      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(44,31,26,0.04) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
+        style={{ background: "linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)" }}
       />
-
-      {/* ── Soft petal particles ── */}
-      {[...Array(14)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            width: i % 3 === 0 ? 4 : 3,
-            height: i % 3 === 0 ? 4 : 3,
-            left: `${(i * 7 + 5) % 95}%`,
-            top: `${(i * 11 + 8) % 88}%`,
-            background:
-              i % 4 === 0 ? "#c9857a" : i % 4 === 1 ? "#c8a87a" : i % 4 === 2 ? "#b8a4c8" : "#8fa882",
-            opacity: 0.45,
-          }}
-          animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1.3, 0.5] }}
-          transition={{ duration: 3 + (i % 3), delay: (i * 0.4) % 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ))}
 
       {/* ── Butterflies ── */}
       {BUTTERFLIES.map((b, i) => (
         <Butterfly key={i} {...b} />
       ))}
 
-      {/* ── Main content ── */}
-      <div className="container mx-auto relative z-10 pt-28 pb-20">
-        <div className="grid lg:grid-cols-12 gap-10 items-center min-h-[82vh]">
+      {/* ── Left: vertical social links ── */}
+      <div className="absolute left-7 top-1/2 -translate-y-1/2 z-20 hidden lg:flex flex-col items-center gap-5">
+        <div className="w-px h-14 bg-white/25" />
+        {[
+          { label: "Instagram", href: BUSINESS.instagram },
+          { label: "Facebook",  href: BUSINESS.facebook },
+        ].map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/45 hover:text-amber-400 transition-colors duration-300"
+            style={{
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+              fontSize: "9px",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              fontFamily: "var(--font-sans)",
+            }}
+          >
+            {s.label}
+          </a>
+        ))}
+        <div className="w-px h-14 bg-white/25" />
+      </div>
 
-          {/* ── Left: Content ── */}
-          <motion.div
-            variants={stagger}
+      {/* ── Main content ── */}
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-3xl lg:ml-16">
+
+          {/* Script eyebrow */}
+          <motion.p
+            custom={0}
+            variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="lg:col-span-6 xl:col-span-5 space-y-10"
+            className="font-serif italic mb-4"
+            style={{ color: "#c9a227", fontSize: "clamp(18px, 2vw, 26px)" }}
           >
-            {/* eyebrow */}
-            <motion.div variants={fadeUp} className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4" style={{ color: "#c9857a" }} />
-              <p
-                className="text-xs tracking-[0.35em] uppercase font-medium"
-                style={{ color: "rgba(160,100,90,0.90)" }}
-              >
-                Cardiff's Premier Nail Studio
-              </p>
-            </motion.div>
+            luxury nail studio
+          </motion.p>
 
-            {/* headline */}
-            <motion.h1
-              variants={fadeUp}
-              className="font-serif leading-[0.93]"
-              style={{ fontSize: "clamp(42px, 5.8vw, 82px)", color: "#2c1f1a" }}
+          {/* Main heading */}
+          <motion.h1
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="font-serif font-bold text-white leading-none mb-6"
+            style={{ fontSize: "clamp(52px, 8vw, 108px)", letterSpacing: "-0.02em" }}
+          >
+            {BUSINESS.name}
+          </motion.h1>
+
+          {/* Tagline */}
+          <motion.p
+            custom={2}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="text-white/60 font-light max-w-md mb-10"
+            style={{ fontSize: "clamp(14px, 1.1vw, 17px)", lineHeight: 1.85, fontFamily: "var(--font-sans)" }}
+          >
+            A sanctuary where artistry blooms — precision, elegance, and
+            top-notch personalised care in the heart of Cardiff.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            custom={3}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-wrap gap-4"
+          >
+            <button
+              onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
+              className="group flex items-center gap-2 border border-white/75 text-white text-xs tracking-[0.2em] uppercase px-8 py-4 hover:bg-white hover:text-black transition-all duration-300"
             >
-              Let Your
-              <br />
-              <em
-                className="italic"
-                style={{
-                  display: "inline-block",
-                  background: "linear-gradient(90deg, #c9857a, #b8a4c8, #8fa882)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                Beauty
-              </em>
-              <br />
-              Take Flight
-            </motion.h1>
-
-            {/* sub */}
-            <motion.p
-              variants={fadeUp}
-              className="text-base max-w-sm leading-relaxed font-light"
-              style={{ color: "rgba(44,31,26,0.55)" }}
+              Explore Services
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={onBookingClick}
+              className="group flex items-center gap-2 text-black text-xs tracking-[0.2em] uppercase px-8 py-4 font-medium transition-all duration-300 hover:opacity-90"
+              style={{ background: "#c9a227" }}
             >
-              A sanctuary where artistry blooms — precision, elegance, and
-              top-notch personalised care at an affordable price.
-            </motion.p>
-
-            {/* CTA */}
-            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5">
-              <Button
-                size="lg"
-                onClick={onBookingClick}
-                className="group rounded-none text-xs tracking-[0.18em] uppercase px-10 h-14 border-0"
-                style={{
-                  background: "#2c1f1a",
-                  color: "#fdf8f4",
-                  boxShadow: "0 4px 20px rgba(44,31,26,0.18)",
-                }}
-              >
-                Book Appointment
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <button
-                onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
-                className="group flex items-center gap-2 text-xs tracking-[0.18em] uppercase transition-colors"
-                style={{ color: "rgba(44,31,26,0.45)" }}
-              >
-                View Services
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </motion.div>
-
-            {/* stats */}
-            <motion.div
-              variants={fadeUp}
-              className="flex flex-wrap items-start gap-8 pt-6"
-              style={{ borderTop: "1px solid rgba(44,31,26,0.10)" }}
-            >
-              {stats.map((s) => (
-                <div key={s.label}>
-                  <p
-                    className="font-serif text-3xl leading-none"
-                    style={{
-                      display: "inline-block",
-                      background: "linear-gradient(135deg, #c9857a, #b8a4c8)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    {s.value}
-                  </p>
-                  <p
-                    className="mt-1.5 text-[10px] tracking-[0.22em] uppercase"
-                    style={{ color: "rgba(44,31,26,0.40)" }}
-                  >
-                    {s.label}
-                  </p>
-                </div>
-              ))}
-            </motion.div>
+              Book Now
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
 
-          {/* ── Right: Glass Carousel ── */}
+          {/* Stats */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
-            className="lg:col-span-6 xl:col-span-7 relative"
-            style={{ perspective: "1200px" }}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
+            custom={4}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-wrap gap-10 mt-14 pt-8 border-t border-white/15"
           >
-            <div className="relative max-w-[520px] ml-auto">
-              {/* glow ring */}
-              <div
-                className="absolute -inset-3 rounded-sm pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(201,133,122,0.25), rgba(184,164,200,0.20), rgba(143,168,130,0.15))",
-                  filter: "blur(20px)",
-                  opacity: 0.9,
-                }}
-              />
-
-              {/* frame */}
-              <motion.div
-                className="aspect-[4/5] overflow-hidden relative"
-                whileHover={{ rotateY: -3, rotateX: 2 }}
-                transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                style={{
-                  transformStyle: "preserve-3d",
-                  border: "1px solid rgba(44,31,26,0.10)",
-                  boxShadow: "0 8px 40px rgba(44,31,26,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
-                }}
-              >
-                <AnimatePresence custom={direction} initial={false}>
-                  <motion.img
-                    key={current}
-                    src={slides[current].src}
-                    alt={slides[current].alt}
-                    custom={direction}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    width={1040}
-                    height={1300}
-                  />
-                </AnimatePresence>
-
-                {/* colour tint */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: "linear-gradient(to top, rgba(44,31,26,0.35) 0%, transparent 55%)",
-                  }}
-                />
-
-                {/* label */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`label-${current}`}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute bottom-5 left-5 z-10"
-                  >
-                    <span
-                      className="px-3 py-1.5 text-[10px] tracking-[0.22em] uppercase font-medium"
-                      style={{
-                        background: "rgba(253,248,244,0.80)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(44,31,26,0.12)",
-                        color: "rgba(44,31,26,0.80)",
-                      }}
-                    >
-                      {slides[current].label}
-                    </span>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* prev/next */}
-                <button
-                  aria-label="Previous slide"
-                  onClick={() => go(current - 1, -1)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center transition-all"
-                  style={{
-                    background: "rgba(253,248,244,0.75)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(44,31,26,0.10)",
-                  }}
-                >
-                  <ChevronLeft className="w-4 h-4" style={{ color: "#2c1f1a" }} />
-                </button>
-                <button
-                  aria-label="Next slide"
-                  onClick={() => go(current + 1, 1)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 flex items-center justify-center transition-all"
-                  style={{
-                    background: "rgba(253,248,244,0.75)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(44,31,26,0.10)",
-                  }}
-                >
-                  <ChevronRight className="w-4 h-4" style={{ color: "#2c1f1a" }} />
-                </button>
-              </motion.div>
-
-              {/* progress + dots */}
-              <div className="mt-4 flex flex-col items-end gap-2.5 pr-1">
-                <div
-                  className="w-full h-px overflow-hidden"
-                  style={{ background: "rgba(44,31,26,0.10)" }}
-                >
-                  <motion.div
-                    key={`progress-${current}`}
-                    className="h-full"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: paused ? undefined : 1 }}
-                    transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
-                    style={{
-                      transformOrigin: "left",
-                      background: "linear-gradient(90deg, #c9857a, #b8a4c8)",
-                    }}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      aria-label={`Go to slide ${i + 1}`}
-                      onClick={() => go(i, i > current ? 1 : -1)}
-                      className="transition-all duration-300 rounded-full"
-                      style={{
-                        width: i === current ? 20 : 6,
-                        height: 6,
-                        background:
-                          i === current
-                            ? "linear-gradient(90deg, #c9857a, #b8a4c8)"
-                            : "rgba(44,31,26,0.15)",
-                      }}
-                    />
-                  ))}
-                  <span
-                    className="ml-2 text-[10px] tracking-[0.15em] tabular-nums"
-                    style={{ color: "rgba(44,31,26,0.30)" }}
-                  >
-                    {String(current + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
-                  </span>
-                </div>
+            {stats.map((s) => (
+              <div key={s.label}>
+                <p className="font-serif text-3xl leading-none text-white">{s.value}</p>
+                <p className="mt-1.5 text-[10px] tracking-[0.2em] uppercase text-white/40">{s.label}</p>
               </div>
-
-              {/* badge: star rating */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.0, duration: 0.55 }}
-                className="absolute -left-6 top-10 z-20 px-5 py-3.5"
-                style={{
-                  background: "rgba(253,248,244,0.92)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(44,31,26,0.10)",
-                  boxShadow: "0 4px 20px rgba(44,31,26,0.08)",
-                }}
-              >
-                <div className="flex gap-1 mb-1.5">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <svg key={j} width="12" height="12" viewBox="0 0 12 12">
-                      <polygon
-                        points="6,1 7.5,4.5 11,4.5 8.5,7 9.5,11 6,8.8 2.5,11 3.5,7 1,4.5 4.5,4.5"
-                        fill="#c9857a"
-                      />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-[11px] tracking-[0.12em]" style={{ color: "rgba(44,31,26,0.55)" }}>
-                  Rated #1 in Cardiff
-                </p>
-              </motion.div>
-
-              {/* badge: est */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.18, duration: 0.52 }}
-                className="absolute -bottom-14 right-8 z-20 px-7 py-4"
-                style={{
-                  background: "#2c1f1a",
-                  boxShadow: "0 4px 24px rgba(44,31,26,0.18)",
-                }}
-              >
-                <p className="font-serif text-2xl leading-none" style={{ color: "#fdf8f4" }}>Est.</p>
-                <p className="mt-1 text-[9px] tracking-[0.28em] uppercase" style={{ color: "rgba(253,248,244,0.45)" }}>
-                  Cardiff
-                </p>
-              </motion.div>
-
-              {/* corner accents */}
-              <div
-                className="absolute -bottom-4 -left-4 w-20 h-20 pointer-events-none"
-                style={{ border: "1px solid rgba(201,133,122,0.25)" }}
-              />
-              <div
-                className="absolute -top-3 -right-3 w-14 h-14 pointer-events-none"
-                style={{ border: "1px solid rgba(184,164,200,0.22)" }}
-              />
-            </div>
+            ))}
           </motion.div>
         </div>
       </div>
 
-      {/* ── Scroll indicator ── */}
+      {/* ── Right: vertical slide dots ── */}
+      <div className="absolute right-7 top-1/2 -translate-y-1/2 z-20 hidden lg:flex flex-col items-center gap-3">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            aria-label={`Go to slide ${i + 1}`}
+            onClick={() => go(i, i > current ? 1 : -1)}
+            className="transition-all duration-300"
+            style={{
+              width: 2,
+              height: i === current ? 32 : 10,
+              background: i === current ? "#c9a227" : "rgba(255,255,255,0.30)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── Bottom: slide counter ── */}
+      <div className="absolute bottom-8 right-8 z-20 hidden lg:block">
+        <span className="font-serif text-white/35 text-sm tabular-nums">
+          {String(current + 1).padStart(2, "0")}
+          <span className="mx-2 text-white/20">/</span>
+          {String(slides.length).padStart(2, "0")}
+        </span>
+      </div>
+
+      {/* ── Scroll hint ── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.9 }}
-        className="absolute bottom-9 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        transition={{ delay: 2, duration: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 hidden md:flex flex-col items-center gap-2"
       >
-        <motion.div
-          animate={{ y: [0, 7, 0] }}
-          transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
-          className="w-px h-10"
-          style={{ background: "linear-gradient(to bottom, rgba(201,133,122,0.6), transparent)" }}
-        />
-        <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: "rgba(44,31,26,0.30)" }}>
+        <div className="w-px h-12 bg-white/20 relative overflow-hidden">
+          <motion.div
+            className="absolute top-0 left-0 w-full bg-amber-400"
+            animate={{ height: ["0%", "100%", "0%"], top: ["0%", "0%", "100%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+        <span className="text-white/30 text-[9px] tracking-[0.3em] uppercase" style={{ fontFamily: "var(--font-sans)" }}>
           Scroll
-        </p>
+        </span>
       </motion.div>
     </section>
   );
 };
 
 export default HeroSection;
-

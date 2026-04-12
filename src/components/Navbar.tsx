@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { Menu, X, Instagram, Facebook } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Menu, X, Phone } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
 
 interface NavbarProps {
@@ -8,23 +7,16 @@ interface NavbarProps {
 }
 
 const navItems = [
-  { label: "Home",     id: "hero" },
-  { label: "Services", id: "services" },
-  { label: "Our Story",id: "story" },
-  { label: "Gallery",  id: "gallery" },
-  { label: "Location", id: "location" },  // thêm dòng này
-  { label: "Contact",  id: "contact" },
+  { label: "Home",      id: "hero" },
+  { label: "Services",  id: "services" },
+  { label: "Our Story", id: "story" },
+  { label: "Gallery",   id: "gallery" },
+  { label: "Location",  id: "location" },
+  { label: "Contact",   id: "contact" },
 ];
 
 const Navbar = ({ onBookingClick }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -32,81 +24,79 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
   };
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-background/95 backdrop-blur-xl border-b border-border shadow-subtle"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="container mx-auto flex items-center justify-between py-5 px-6">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+      <div className="container mx-auto flex items-center justify-between px-6 h-16">
+        {/* Logo */}
         <button
           onClick={() => scrollTo("hero")}
-          className="font-serif text-2xl tracking-[0.08em] text-foreground"
+          className="font-serif italic text-xl tracking-wide text-gray-900"
         >
           {BUSINESS.name}
         </button>
 
-        <div className="hidden lg:flex items-center gap-8">
+        {/* Center nav */}
+        <div className="hidden lg:flex items-center gap-7">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
-              className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-300"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-200"
             >
               {item.label}
             </button>
           ))}
-          <Button
+        </div>
+
+        {/* Right: phone + book now */}
+        <div className="hidden lg:flex items-center gap-5">
+          <a
+            href={`tel:${BUSINESS.phone}`}
+            className="flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
+            style={{ color: "#c9a227" }}
+          >
+            <Phone className="w-3.5 h-3.5" />
+            {BUSINESS.phone}
+          </a>
+          <button
             onClick={onBookingClick}
-            className="bg-foreground text-background hover:bg-foreground/90 text-xs tracking-[0.15em] uppercase px-6 py-2.5 rounded-none"
+            className="bg-gray-900 text-white text-xs tracking-[0.15em] uppercase px-5 py-2.5 hover:bg-gray-700 transition-colors duration-200 flex items-center gap-1.5"
           >
-            Book Now
-          </Button>
+            Book Now <span className="text-base leading-none">→</span>
+          </button>
         </div>
 
-        <div className="hidden lg:flex items-center gap-3 ml-4">
-          <a
-            href={BUSINESS.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Instagram className="w-4 h-4" />
-          </a>
-          <a
-            href={BUSINESS.facebook}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Facebook className="w-4 h-4" />
-          </a>
-        </div>
-
-        <button className="lg:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
+        {/* Mobile hamburger */}
+        <button className="lg:hidden text-gray-900" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
+      {/* Mobile menu */}
       {isOpen && (
-        <div className="lg:hidden bg-background border-t border-border px-6 pb-8 pt-4 space-y-5">
+        <div className="lg:hidden bg-white border-t border-gray-100 px-6 pb-6 pt-4 space-y-4">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
-              className="block w-full text-left text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors py-1"
+              className="block w-full text-left text-sm text-gray-600 hover:text-gray-900 py-1.5"
             >
               {item.label}
             </button>
           ))}
-          <Button
-            onClick={() => {
-              onBookingClick();
-              setIsOpen(false);
-            }}
-            className="w-full bg-foreground text-background rounded-none text-xs tracking-[0.15em] uppercase"
+          <a
+            href={`tel:${BUSINESS.phone}`}
+            className="flex items-center gap-2 text-sm font-medium py-1.5"
+            style={{ color: "#c9a227" }}
+          >
+            <Phone className="w-3.5 h-3.5" />
+            {BUSINESS.phone}
+          </a>
+          <button
+            onClick={() => { onBookingClick(); setIsOpen(false); }}
+            className="w-full bg-gray-900 text-white text-xs tracking-[0.15em] uppercase py-3"
           >
             Book Now
-          </Button>
+          </button>
         </div>
       )}
     </nav>
