@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Phone, Instagram, Facebook } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
+import logoNgang2 from "@/assets/logo-kingnails.png";
 
 interface NavbarProps {
   onBookingClick: () => void;
@@ -27,11 +28,8 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="container mx-auto flex items-center justify-between px-6 h-16">
         {/* Logo */}
-        <button
-          onClick={() => scrollTo("hero")}
-          className="font-serif italic text-xl tracking-wide text-gray-900"
-        >
-          {BUSINESS.name}
+        <button onClick={() => scrollTo("hero")}>
+          <img src={logoNgang2} alt={BUSINESS.name} className="h-24 w-auto object-contain" />
         </button>
 
         {/* Center nav */}

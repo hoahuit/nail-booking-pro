@@ -61,3 +61,18 @@ export interface PointTransaction {
   createdAt: string;
 }
 
+export type VoucherType = "PERCENT" | "FIXED";
+
+export interface Voucher {
+  id: string;
+  code: string;
+  type: VoucherType;
+  value: number;          // % or £
+  minOrder?: number;      // min spend to apply
+  maxUses?: number;
+  usedCount: number;
+  isActive: boolean;
+  expiresAt?: string;     // ISO or undefined = no expiry
+  createdAt: string;
+}
+

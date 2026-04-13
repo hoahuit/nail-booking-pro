@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Scissors,
   Star,
+  Tag,
   ExternalLink,
   LogOut,
   Menu,
@@ -21,23 +22,25 @@ const navGroups = [
     label: "Quản lý chính",
     links: [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
-      { to: "/admin/bookings",  icon: CalendarDays,    label: "Lịch đặt" },
+      { to: "/admin/bookings", icon: CalendarDays, label: "Lịch đặt" },
     ],
   },
   {
     label: "Cửa hàng",
     links: [
       { to: "/admin/services", icon: Scissors, label: "Dịch vụ" },
-      { to: "/admin/points",   icon: Star,     label: "Điểm thưởng" },
+      { to: "/admin/points", icon: Star, label: "Điểm thưởng" },
+      { to: "/admin/vouchers", icon: Tag, label: "Voucher" },
     ],
   },
 ];
 
 const PAGE_LABELS: Record<string, string> = {
   "/admin/dashboard": "Tổng quan",
-  "/admin/bookings":  "Lịch đặt",
-  "/admin/services":  "Dịch vụ",
-  "/admin/points":    "Điểm thưởng",
+  "/admin/bookings": "Lịch đặt",
+  "/admin/services": "Dịch vụ",
+  "/admin/points": "Điểm thưởng",
+  "/admin/vouchers": "Voucher",
 };
 
 const SidebarContent = ({
@@ -55,8 +58,12 @@ const SidebarContent = ({
           <span className="text-white text-xs font-bold">LN</span>
         </div>
         <div>
-          <p className="font-semibold text-slate-800 text-sm leading-tight">Luxe Nails</p>
-          <p className="text-[10px] text-slate-400 leading-tight">Quản trị viên</p>
+          <p className="font-semibold text-slate-800 text-sm leading-tight">
+            King Nails
+          </p>
+          <p className="text-[10px] text-slate-400 leading-tight">
+            Quản trị viên
+          </p>
         </div>
       </div>
       {onClose && (
@@ -92,9 +99,13 @@ const SidebarContent = ({
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-rose-500" : "text-slate-400"}`} />
+                    <Icon
+                      className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-rose-500" : "text-slate-400"}`}
+                    />
                     <span className="flex-1">{label}</span>
-                    {isActive && <ChevronRight className="w-3 h-3 text-rose-400 opacity-60" />}
+                    {isActive && (
+                      <ChevronRight className="w-3 h-3 text-rose-400 opacity-60" />
+                    )}
                   </>
                 )}
               </NavLink>
@@ -128,9 +139,9 @@ const SidebarContent = ({
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const logout    = useLogout();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const logout = useLogout();
 
   const pageLabel = PAGE_LABELS[location.pathname] ?? "Quản trị";
 
@@ -181,7 +192,9 @@ const AdminLayout = () => {
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
                 <span className="font-medium text-slate-700">{pageLabel}</span>
               </div>
-              <span className="lg:hidden font-semibold text-slate-700">{pageLabel}</span>
+              <span className="lg:hidden font-semibold text-slate-700">
+                {pageLabel}
+              </span>
             </div>
 
             {/* Right: search + bell + avatar */}

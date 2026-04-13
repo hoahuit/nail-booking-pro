@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
 import AdminBookings from "./pages/admin/AdminBookings.tsx";
 import AdminServices from "./pages/admin/AdminServices.tsx";
 import AdminPoints from "./pages/admin/AdminPoints.tsx";
+import AdminVouchers from "./pages/admin/AdminVouchers.tsx";
 
 import { getToken } from "@/hooks/useAuth";
 
@@ -44,9 +45,10 @@ const App = () => (
           >
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="bookings"  element={<AdminBookings />} />
-            <Route path="services"  element={<AdminServices />} />
-            <Route path="points"    element={<AdminPoints />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="services" element={<AdminServices />} />
+            <Route path="points" element={<AdminPoints />} />
+            <Route path="vouchers" element={<AdminVouchers />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

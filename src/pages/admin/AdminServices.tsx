@@ -48,26 +48,29 @@ function ServiceModal({
   const [form, setForm] = useState<ServicePayload>(
     initial
       ? {
-          name:        initial.name,
+          name: initial.name,
           description: initial.description ?? "",
-          image:       initial.image ?? "",
-          duration:    initial.duration,
-          price:       parseFloat(initial.price),
-          category:    initial.category,
-          isActive:    initial.isActive,
+          image: initial.image ?? "",
+          duration: initial.duration,
+          price: parseFloat(initial.price),
+          category: initial.category,
+          isActive: initial.isActive,
         }
       : EMPTY,
   );
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(resolveAssetUrl(initial?.image));
+  const [imagePreview, setImagePreview] = useState<string>(
+    resolveAssetUrl(initial?.image),
+  );
 
   const { data: cats } = useServiceCategories();
-  const create       = useCreateService();
-  const update       = useUpdateService();
-  const uploadImage  = useUploadServiceImage();
+  const create = useCreateService();
+  const update = useUpdateService();
+  const uploadImage = useUploadServiceImage();
 
-  const isPending = create.isPending || update.isPending || uploadImage.isPending;
+  const isPending =
+    create.isPending || update.isPending || uploadImage.isPending;
 
   const set = <K extends keyof ServicePayload>(k: K, v: ServicePayload[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -87,8 +90,8 @@ function ServiceModal({
     }
     const payload: ServicePayload = {
       ...form,
-      image:    imageUrl || undefined,
-      price:    Number(form.price),
+      image: imageUrl || undefined,
+      price: Number(form.price),
       duration: Number(form.duration),
     };
     if (isEdit && initial) {
@@ -101,8 +104,7 @@ function ServiceModal({
 
   const inputCls =
     "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-rose-300 focus:ring-1 focus:ring-rose-100 transition-colors placeholder:text-slate-400 shadow-sm";
-  const labelCls =
-    "block text-xs font-semibold text-slate-600 mb-1.5";
+  const labelCls = "block text-xs font-semibold text-slate-600 mb-1.5";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -126,7 +128,10 @@ function ServiceModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <form
+          onSubmit={handleSubmit}
+          className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto"
+        >
           {/* Name */}
           <div>
             <label className={labelCls}>Tên dịch vụ *</label>
@@ -151,14 +156,16 @@ function ServiceModal({
               required
             />
             <datalist id="category-list">
-              {cats?.map((c) => <option key={c} value={c} />)}
+              {cats?.map((c) => (
+                <option key={c} value={c} />
+              ))}
             </datalist>
           </div>
 
           {/* Price + Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Giá ($) *</label>
+              <label className={labelCls}>Giá (£) *</label>
               <input
                 type="number"
                 min={0}
@@ -201,7 +208,11 @@ function ServiceModal({
               {/* Preview */}
               <div className="w-20 h-20 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {imagePreview ? (
-                  <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                  <img
+                    src={imagePreview}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <ImageOff className="w-6 h-6 text-slate-300" />
                 )}
@@ -220,12 +231,17 @@ function ServiceModal({
                   />
                 </label>
                 {imagePreview && !imageFile && (
-                  <p className="text-xs text-slate-400 truncate">Ảnh hiện tại: {imagePreview}</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    Ảnh hiện tại: {imagePreview}
+                  </p>
                 )}
                 {imageFile && (
                   <button
                     type="button"
-                    onClick={() => { setImageFile(null); setImagePreview(resolveAssetUrl(initial?.image)); }}
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(resolveAssetUrl(initial?.image));
+                    }}
                     className="text-xs text-rose-400 hover:text-rose-600 transition-colors"
                   >
                     Bỏ chọn
@@ -233,7 +249,8 @@ function ServiceModal({
                 )}
                 {uploadImage.isPending && (
                   <p className="flex items-center gap-1.5 text-xs text-slate-400">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Đang tải ảnh lên…
+                    <Loader2 className="w-3 h-3 animate-spin" /> Đang tải ảnh
+                    lên…
                   </p>
                 )}
               </div>
@@ -289,15 +306,15 @@ function ServiceModal({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const AdminServices = () => {
-  const [search, setSearch]         = useState("");
-  const [category, setCategory]     = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
   const [showInactive, setShowInactive] = useState(false);
-  const [page, setPage]             = useState(1);
-  const [editing, setEditing]       = useState<ApiService | null | "new">(null);
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<ApiService | null | "new">(null);
   const LIMIT = 20;
 
   const { data, isLoading, isError, refetch, isFetching } = useAdminServices({
-    search:   search   || undefined,
+    search: search || undefined,
     category: category || undefined,
     isActive: showInactive ? undefined : true,
     page,
@@ -308,10 +325,16 @@ const AdminServices = () => {
   const softDelete = useDeleteService();
 
   const services = data?.data ?? [];
-  const meta     = data?.meta;
+  const meta = data?.meta;
 
-  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
-  const handleCategory = (v: string) => { setCategory(v); setPage(1); };
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    setPage(1);
+  };
+  const handleCategory = (v: string) => {
+    setCategory(v);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6 ">
@@ -329,7 +352,9 @@ const AdminServices = () => {
             disabled={isFetching}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`}
+            />
             Làm mới
           </button>
           <button
@@ -360,18 +385,29 @@ const AdminServices = () => {
           className="px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-rose-300 transition-colors text-slate-700 shadow-sm"
         >
           <option value="">Tất cả danh mục</option>
-          {cats?.map((c) => <option key={c} value={c}>{c}</option>)}
+          {cats?.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
 
         <button
-          onClick={() => { setShowInactive((v) => !v); setPage(1); }}
+          onClick={() => {
+            setShowInactive((v) => !v);
+            setPage(1);
+          }}
           className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium border rounded-lg transition-colors shadow-sm ${
             showInactive
               ? "bg-slate-800 text-white border-slate-800"
               : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
           }`}
         >
-          {showInactive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          {showInactive ? (
+            <Eye className="w-3.5 h-3.5" />
+          ) : (
+            <EyeOff className="w-3.5 h-3.5" />
+          )}
           {showInactive ? "Hiện tất cả" : "Chỉ hiển thị active"}
         </button>
       </div>
@@ -386,7 +422,12 @@ const AdminServices = () => {
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <XCircle className="w-8 h-8 text-red-300" />
           <p className="text-sm text-slate-500">Không thể tải dữ liệu</p>
-          <button onClick={() => refetch()} className="text-xs text-rose-500 underline">Thử lại</button>
+          <button
+            onClick={() => refetch()}
+            className="text-xs text-rose-500 underline"
+          >
+            Thử lại
+          </button>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -394,7 +435,15 @@ const AdminServices = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
-                  {["", "Dịch vụ", "Danh mục", "Giá", "Thời lượng", "Trạng thái", "Thao tác"].map((h) => (
+                  {[
+                    "",
+                    "Dịch vụ",
+                    "Danh mục",
+                    "Giá",
+                    "Thời lượng",
+                    "Trạng thái",
+                    "Thao tác",
+                  ].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 whitespace-nowrap"
@@ -407,7 +456,10 @@ const AdminServices = () => {
               <tbody className="divide-y divide-slate-50">
                 {services.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-14 text-center text-slate-400 text-sm">
+                    <td
+                      colSpan={7}
+                      className="px-4 py-14 text-center text-slate-400 text-sm"
+                    >
                       Không có dịch vụ nào
                     </td>
                   </tr>
@@ -437,14 +489,20 @@ const AdminServices = () => {
 
                       {/* Name + desc */}
                       <td className="px-4 py-3 max-w-[220px]">
-                        <p className="font-medium text-slate-700 truncate">{svc.name}</p>
+                        <p className="font-medium text-slate-700 truncate">
+                          {svc.name}
+                        </p>
                         {svc.description && (
-                          <p className="text-xs text-slate-400 truncate mt-0.5">{svc.description}</p>
+                          <p className="text-xs text-slate-400 truncate mt-0.5">
+                            {svc.description}
+                          </p>
                         )}
                       </td>
 
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
-                        <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">{svc.category}</span>
+                        <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">
+                          {svc.category}
+                        </span>
                       </td>
 
                       <td className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">
@@ -499,7 +557,8 @@ const AdminServices = () => {
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <p className="text-slate-400 text-xs">
-            Trang {meta.page} / {meta.totalPages} &nbsp;·&nbsp; {meta.total} kết quả
+            Trang {meta.page} / {meta.totalPages} &nbsp;·&nbsp; {meta.total} kết
+            quả
           </p>
           <div className="flex gap-2">
             <button
