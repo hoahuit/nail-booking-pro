@@ -188,7 +188,7 @@ const AdminLayout = () => {
                 <Menu className="w-5 h-5" />
               </button>
               <div className="hidden lg:flex items-center gap-2 text-sm">
-                <span className="text-slate-400">Luxe Nails</span>
+                <span className="text-slate-400">Kings Nails</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
                 <span className="font-medium text-slate-700">{pageLabel}</span>
               </div>
@@ -198,19 +198,6 @@ const AdminLayout = () => {
             </div>
 
             {/* Right: search + bell + avatar */}
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-400">
-                <Search className="w-3.5 h-3.5" />
-                <span className="text-xs">Tìm kiếm…</span>
-              </div>
-              <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
-              </button>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-400 to-pink-600 flex items-center justify-center shadow-sm cursor-pointer">
-                <span className="text-white text-xs font-bold">A</span>
-              </div>
-            </div>
           </div>
         </header>
 
@@ -220,7 +207,7 @@ const AdminLayout = () => {
         </main>
 
         <footer className="px-7 py-3 text-[10px] text-slate-300 text-right border-t border-slate-100">
-          Luxe Nails Admin · {new Date().getFullYear()}
+          Kings Nails Admin · {new Date().getFullYear()}
         </footer>
       </div>
     </div>

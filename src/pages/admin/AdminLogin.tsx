@@ -7,15 +7,17 @@ import { Label } from "@/components/ui/label";
 import { useLogin } from "@/hooks/useAuth";
 
 const AdminLogin = () => {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow]         = useState(false);
+  const [show, setShow] = useState(false);
   const navigate = useNavigate();
-  const login    = useLogin();
+  const login = useLogin();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await login.mutateAsync({ email, password }).catch(() => null);
+    const result = await login
+      .mutateAsync({ email, password })
+      .catch(() => null);
     if (result) {
       navigate("/admin/dashboard");
     }
@@ -27,7 +29,7 @@ const AdminLogin = () => {
         {/* Brand */}
         <div className="text-center mb-12 space-y-2">
           <span className="font-serif text-4xl tracking-wide text-primary-foreground">
-            LUXE NAILS
+            KINGS NAILS
           </span>
           <p className="text-[10px] tracking-[0.3em] uppercase text-primary-foreground/35 mt-2">
             Cổng quản trị
@@ -82,7 +84,11 @@ const AdminLogin = () => {
                 onClick={() => setShow((s) => !s)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-foreground/35 hover:text-primary-foreground/60 transition-colors"
               >
-                {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
@@ -97,7 +103,7 @@ const AdminLogin = () => {
         </form>
 
         <p className="mt-10 text-center text-[10px] tracking-wider text-primary-foreground/18 uppercase">
-          Luxe Nails Quản trị · 2026
+          Kings Nails Quản trị · 2026
         </p>
       </div>
     </div>

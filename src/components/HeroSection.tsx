@@ -287,37 +287,38 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
             style={{ color: "#c9a227", fontSize: "clamp(18px, 2vw, 26px)" }}
           ></motion.p>
 
+          <motion.div
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="mb-4"
+          >
+            <img
+              src={logoKingNails}
+              alt="King Nails"
+              className="w-full max-w-[900px] h-auto"
+              style={{
+                maxHeight: "clamp(130px, 24vw, 300px)",
+                objectFit: "contain",
+              }}
+            />
+          </motion.div>
+
           <motion.p
             custom={2}
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="text-white/60 font-light max-w-md mb-10"
+            className="text-white/60 font-light max-w-2xl mb-10"
             style={{
               fontSize: "clamp(14px, 1.1vw, 17px)",
               lineHeight: 1.85,
               fontFamily: "var(--font-sans)",
             }}
           >
-            <motion.div
-              custom={1}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              className="mb-6"
-            >
-              <img
-                src={logoKingNails}
-                alt="King Nails"
-                style={{
-                  height: "clamp(48px, 6vw, 96px)",
-                  width: "100%",
-                  objectFit: "contain",
-                }}
-              />
-              A sanctuary where artistry blooms — precision, elegance, and
-              top-notch personalised care in the heart of Cardiff.
-            </motion.div>
+            A sanctuary where artistry blooms — precision, elegance, and
+            top-notch personalised care in the heart of Cardiff.
           </motion.p>
 
           {/* CTAs */}
