@@ -29,6 +29,7 @@ export type BookingPayload = {
   staffId: string;     // "any" | staff.id
   note: string;
   customer: CustomerInfo;
+  voucherCode?: string;
 };
 
 export type CustomerInfo = {
@@ -41,6 +42,10 @@ export type Booking = BookingPayload & {
   id: string;
   status: "pending" | "confirmed" | "cancelled";
   createdAt: string;
+  totalPrice?: number;
+  discountAmount?: number;
+  finalPrice?: number;
+  voucherId?: string
 };
 
 export type GalleryImage = {

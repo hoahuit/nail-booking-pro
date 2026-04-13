@@ -8,12 +8,12 @@ interface NavbarProps {
 }
 
 const navItems = [
-  { label: "Home",      id: "hero" },
-  { label: "Services",  id: "services" },
+  { label: "Home", id: "hero" },
+  { label: "Services", id: "services" },
   { label: "Our Story", id: "story" },
-  { label: "Gallery",   id: "gallery" },
-  { label: "Location",  id: "location" },
-  { label: "Contact",   id: "contact" },
+  { label: "Gallery", id: "gallery" },
+  { label: "Location", id: "location" },
+  { label: "Contact", id: "contact" },
 ];
 
 const Navbar = ({ onBookingClick }: NavbarProps) => {
@@ -29,7 +29,11 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
       <div className="container mx-auto flex items-center justify-between px-6 h-16">
         {/* Logo */}
         <button onClick={() => scrollTo("hero")}>
-          <img src={logoNgang2} alt={BUSINESS.name} className="h-24 w-auto object-contain" />
+          <img
+            src={logoNgang2}
+            alt={BUSINESS.name}
+            className="h-24 w-auto object-contain"
+          />
         </button>
 
         {/* Center nav */}
@@ -77,17 +81,13 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
               <Facebook className="w-4 h-4" />
             </a>
           </div>
-
-          <button
-            onClick={onBookingClick}
-            className="bg-gray-900 text-white text-xs tracking-[0.15em] uppercase px-5 py-2.5 hover:bg-gray-700 transition-colors duration-200 flex items-center gap-1.5"
-          >
-            Book Now <span className="text-base leading-none">→</span>
-          </button>
         </div>
 
         {/* Mobile hamburger */}
-        <button className="lg:hidden text-gray-900" onClick={() => setIsOpen(!isOpen)}>
+        <button
+          className="lg:hidden text-gray-900"
+          onClick={() => setIsOpen(!isOpen)}
+        >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
@@ -113,7 +113,12 @@ const Navbar = ({ onBookingClick }: NavbarProps) => {
             {BUSINESS.phone}
           </a>
           <button
-            onClick={() => { onBookingClick(); setIsOpen(false); }}
+            onClick={() => {
+              document
+                .getElementById("services")
+                ?.scrollIntoView({ behavior: "smooth" });
+              setIsOpen(false);
+            }}
             className="w-full bg-gray-900 text-white text-xs tracking-[0.15em] uppercase py-3"
           >
             Book Now

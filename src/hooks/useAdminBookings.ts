@@ -34,10 +34,17 @@ async function fetchBookings(filters: BookingFilters): Promise<ApiListResponse> 
   if (filters.search) params.set("search", filters.search);
   if (filters.page) params.set("page", String(filters.page));
   if (filters.limit) params.set("limit", String(filters.limit));
+  params.set("orderBy", "createdAt");
+  params.set("order", "desc");
 
   const res = await fetch(`/api/v1/bookings?${params.toString()}`, { headers: adminHeaders() });
   if (!res.ok) throw new Error(`Failed to fetch bookings (${res.status})`);
-  return res.json();
+  const json: ApiListResponse = await res.json();
+  // Sort client-side by createdAt descending to guarantee newest-first
+  json.data = json.data.slice().sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  return json;
 }
 
 async function fetchBookingById(id: string): Promise<ApiBooking> {

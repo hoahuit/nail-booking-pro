@@ -1,4 +1,8 @@
-import type { Booking, Customer, PointTransaction } from "./adminTypes";
+import type { Booking, Customer, PointTransaction, Voucher } from "./adminTypes";
+
+export const mockVouchers: Voucher[] = [
+ 
+];
 
 export const mockCustomers: Customer[] = [
   {

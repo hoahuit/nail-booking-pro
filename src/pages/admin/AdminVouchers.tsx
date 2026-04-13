@@ -11,44 +11,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { Voucher, VoucherType } from "@/lib/adminTypes";
-
-const mockVouchers: Voucher[] = [
-  {
-    id: "v1",
-    code: "WELCOME10",
-    type: "PERCENT",
-    value: 10,
-    minOrder: 20,
-    maxUses: 200,
-    usedCount: 34,
-    isActive: true,
-    expiresAt: "2026-12-31T23:59:59",
-    createdAt: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "v2",
-    code: "SUMMER20",
-    type: "PERCENT",
-    value: 20,
-    minOrder: 30,
-    maxUses: 100,
-    usedCount: 12,
-    isActive: true,
-    expiresAt: "2026-08-31T23:59:59",
-    createdAt: "2026-04-01T00:00:00Z",
-  },
-  {
-    id: "v3",
-    code: "FIXED5",
-    type: "FIXED",
-    value: 5,
-    usedCount: 5,
-    isActive: false,
-    createdAt: "2026-02-01T00:00:00Z",
-  },
-];
+import {
+  useAdminVouchers,
+  useCreateVoucher,
+  useUpdateVoucher,
+  useDeleteVoucher,
+  type ApiVoucher,
+  type VoucherType,
+} from "@/hooks/useAdminVouchers";
 
 const EMPTY_FORM = {
   code: "",
@@ -61,10 +31,11 @@ const EMPTY_FORM = {
 };
 
 const AdminVouchers = () => {
-  const [vouchers, setVouchers] = useLocalStorage<Voucher[]>(
-    "admin_vouchers",
-    mockVouchers,
-  );
+  const { data: vouchers = [], isLoading } = useAdminVouchers();
+  const createVoucher = useCreateVoucher();
+  const updateVoucher = useUpdateVoucher();
+  const deleteVoucher = useDeleteVoucher();
+
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
@@ -94,61 +65,48 @@ const AdminVouchers = () => {
     }
 
     if (editId) {
-      setVouchers((prev) =>
-        prev.map((v) =>
-          v.id === editId
-            ? {
-                ...v,
-                isActive: form.isActive,
-                maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
-                expiresAt: form.expiresAt || undefined,
-              }
-            : v,
-        ),
-      );
-      toast.success("Đã cập nhật voucher");
+      updateVoucher.mutate({
+        id: editId,
+        payload: {
+          isActive: form.isActive,
+          maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
+          expiresAt: form.expiresAt
+            ? new Date(form.expiresAt).toISOString()
+            : null,
+        },
+      });
     } else {
       const code = form.code.trim().toUpperCase();
-      if (vouchers.find((v) => v.code === code)) {
-        toast.error("Mã voucher đã tồn tại");
-        return;
-      }
-      const newVoucher: Voucher = {
-        id: `v${Date.now()}`,
+      createVoucher.mutate({
         code,
         type: form.type,
         value: val,
-        minOrder: form.minOrder ? parseFloat(form.minOrder) : undefined,
+        minOrderValue: form.minOrder ? parseFloat(form.minOrder) : undefined,
         maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
-        usedCount: 0,
         isActive: form.isActive,
-        expiresAt: form.expiresAt || undefined,
-        createdAt: new Date().toISOString(),
-      };
-      setVouchers((prev) => [newVoucher, ...prev]);
-      toast.success(`Voucher ${code} đã được tạo`);
+        expiresAt: form.expiresAt
+          ? new Date(form.expiresAt).toISOString()
+          : undefined,
+      });
     }
     resetForm();
   };
 
-  const toggleActive = (id: string) => {
-    setVouchers((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, isActive: !v.isActive } : v)),
-    );
+  const toggleActive = (v: ApiVoucher) => {
+    updateVoucher.mutate({ id: v.id, payload: { isActive: !v.isActive } });
   };
 
   const handleDelete = (id: string, code: string) => {
     if (!confirm(`Xóa voucher ${code}?`)) return;
-    setVouchers((prev) => prev.filter((v) => v.id !== id));
-    toast.success(`Đã xóa voucher ${code}`);
+    deleteVoucher.mutate(id);
   };
 
-  const startEdit = (v: Voucher) => {
+  const startEdit = (v: ApiVoucher) => {
     setForm({
       code: v.code,
       type: v.type,
       value: String(v.value),
-      minOrder: v.minOrder ? String(v.minOrder) : "",
+      minOrder: v.minOrderValue ? String(v.minOrderValue) : "",
       maxUses: v.maxUses ? String(v.maxUses) : "",
       expiresAt: v.expiresAt ? v.expiresAt.slice(0, 16) : "",
       isActive: v.isActive,
@@ -165,7 +123,7 @@ const AdminVouchers = () => {
         : !v.isActive,
   );
 
-  const isExpired = (v: Voucher) =>
+  const isExpired = (v: ApiVoucher) =>
     !!v.expiresAt && new Date(v.expiresAt) < new Date();
 
   return (
@@ -194,16 +152,21 @@ const AdminVouchers = () => {
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Tổng voucher", value: vouchers.length },
+          { label: "Tổng voucher", value: isLoading ? "…" : vouchers.length },
           {
             label: "Đang hoạt động",
-            value: vouchers.filter((v) => v.isActive).length,
+            value: isLoading ? "…" : vouchers.filter((v) => v.isActive).length,
           },
           {
             label: "Tổng lượt dùng",
-            value: vouchers.reduce((s, v) => s + v.usedCount, 0),
+            value: isLoading
+              ? "…"
+              : vouchers.reduce((s, v) => s + v.usedCount, 0),
           },
-          { label: "Đã hết hạn", value: vouchers.filter(isExpired).length },
+          {
+            label: "Đã hết hạn",
+            value: isLoading ? "…" : vouchers.filter(isExpired).length,
+          },
         ].map((s) => (
           <div key={s.label} className="bg-card shadow-subtle px-5 py-4">
             <p className="font-serif text-3xl text-foreground">{s.value}</p>
@@ -461,7 +424,7 @@ const AdminVouchers = () => {
                       {v.type === "PERCENT" ? `${v.value}%` : `£${v.value}`}
                     </td>
                     <td className="px-5 py-4 text-muted-foreground">
-                      {v.minOrder ? `£${v.minOrder}` : "—"}
+                      {v.minOrderValue ? `£${v.minOrderValue}` : "—"}
                     </td>
                     <td className="px-5 py-4 text-muted-foreground">
                       {v.usedCount}
@@ -483,7 +446,7 @@ const AdminVouchers = () => {
                     </td>
                     <td className="px-5 py-4">
                       <button
-                        onClick={() => toggleActive(v.id)}
+                        onClick={() => toggleActive(v)}
                         title={v.isActive ? "Tắt" : "Bật"}
                       >
                         {v.isActive ? (

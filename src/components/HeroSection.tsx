@@ -340,7 +340,11 @@ const HeroSection = ({ onBookingClick }: HeroSectionProps) => {
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              onClick={onBookingClick}
+              onClick={() =>
+                document
+                  .getElementById("services")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
               className="group flex items-center gap-2 text-black text-xs tracking-[0.2em] uppercase px-8 py-4 font-medium transition-all duration-300 hover:opacity-90"
               style={{ background: "#c9a227" }}
             >

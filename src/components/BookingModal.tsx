@@ -1,8 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CalendarDays,
@@ -14,7 +21,13 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useCreateBooking } from "@/hooks/useBooking";
+import {
+  listActiveVouchersApi,
+  useCreateBooking,
+  validateVoucherApi,
+  type VoucherOption,
+  type VoucherValidation,
+} from "@/hooks/useBooking";
 import type { ServiceItem } from "@/lib/types";
 
 interface BookingModalProps {
@@ -87,6 +100,21 @@ function formatDisplayDate(date: Date) {
   return `${DAY_NAMES_SHORT[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+function parseMoney(value: string): number {
+  const normalized = value.replace(/[^0-9.]/g, "");
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 const BookingModal = ({
   open,
   onOpenChange,
@@ -109,8 +137,22 @@ const BookingModal = ({
   const [note, setNote] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [voucherCode, setVoucherCode] = useState("");
+  const [voucherValidation, setVoucherValidation] =
+    useState<VoucherValidation | null>(null);
+  const [voucherError, setVoucherError] = useState("");
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
+  const [availableVouchers, setAvailableVouchers] = useState<VoucherOption[]>(
+    [],
+  );
+  const [loadingAvailableVouchers, setLoadingAvailableVouchers] =
+    useState(false);
 
   const createBooking = useCreateBooking();
+  const servicePrice = useMemo(
+    () => (selectedService ? parseMoney(selectedService.price) : 0),
+    [selectedService],
+  );
+  const discountedPrice = voucherValidation?.finalPrice ?? servicePrice;
 
   const calGrid = useMemo(
     () => buildCalendarGrid(calMonth.getFullYear(), calMonth.getMonth()),
@@ -138,6 +180,104 @@ const BookingModal = ({
     setSelectedTime("");
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    setLoadingAvailableVouchers(true);
+
+    listActiveVouchersApi()
+      .then((items) => {
+        if (cancelled) return;
+        const now = Date.now();
+        const filtered = items.filter((item) => {
+          if (!item.isActive) return false;
+          if (item.expiresAt && new Date(item.expiresAt).getTime() < now) {
+            return false;
+          }
+          if (item.maxUses !== null && item.usedCount >= item.maxUses) {
+            return false;
+          }
+          if (
+            item.minOrderValue !== null &&
+            servicePrice > 0 &&
+            servicePrice < item.minOrderValue
+          ) {
+            return false;
+          }
+          return true;
+        });
+        setAvailableVouchers(filtered);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableVouchers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAvailableVouchers(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, servicePrice]);
+
+  useEffect(() => {
+    setVoucherValidation(null);
+    setVoucherError("");
+    setVoucherCode("");
+  }, [selectedService?.id]);
+
+  const applyVoucher = async (rawCode?: string): Promise<boolean> => {
+    const code = (rawCode ?? voucherCode).trim().toUpperCase();
+    if (!code) {
+      setVoucherError("Please enter a voucher code");
+      return false;
+    }
+    if (!servicePrice) {
+      setVoucherError("Cannot validate voucher for this service");
+      return false;
+    }
+
+    setIsValidatingVoucher(true);
+    setVoucherError("");
+    try {
+      const validated = await validateVoucherApi(code, servicePrice);
+      setVoucherCode(validated.code);
+      setVoucherValidation(validated);
+      toast.success(`Voucher ${validated.code} applied`);
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Voucher is not valid";
+      setVoucherValidation(null);
+      setVoucherError(message);
+      return false;
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  const clearVoucher = () => {
+    setVoucherCode("");
+    setVoucherValidation(null);
+    setVoucherError("");
+  };
+
+  const handleVoucherSelect = (value: string) => {
+    if (value === "NONE") {
+      clearVoucher();
+      return;
+    }
+
+    setVoucherCode(value);
+    if (voucherValidation && voucherValidation.code !== value) {
+      setVoucherValidation(null);
+    }
+    if (voucherError) {
+      setVoucherError("");
+    }
+  };
+
   const reset = () => {
     setStep(1);
     setSelectedDate(null);
@@ -147,16 +287,27 @@ const BookingModal = ({
     setNote("");
     setForm({ name: "", phone: "", email: "" });
     setVoucherCode("");
+    setVoucherValidation(null);
+    setVoucherError("");
     onOpenChange(false);
   };
 
   const handleConfirm = async () => {
-    debugger;
     if (!form.name || !form.phone || !form.email) {
       toast.error("Please fill in all fields");
       return;
     }
     if (!selectedService || !selectedDate) return;
+
+    let selectedVoucherCode: string | undefined;
+    if (voucherCode.trim()) {
+      const code = voucherCode.trim().toUpperCase();
+      if (!voucherValidation || voucherValidation.code !== code) {
+        const isValid = await applyVoucher(code);
+        if (!isValid) return;
+      }
+      selectedVoucherCode = code;
+    }
 
     try {
       await createBooking.mutateAsync({
@@ -166,6 +317,7 @@ const BookingModal = ({
         staffId: staff,
         note,
         customer: form,
+        voucherCode: selectedVoucherCode,
       });
       setStep(4);
     } catch (error) {
@@ -511,20 +663,113 @@ const BookingModal = ({
                   className="border-gray-200 text-sm"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label className="text-xs text-gray-500">
                   Voucher / Mã giảm giá (tùy chọn)
                 </Label>
-                <Input
-                  placeholder="vd: SUMMER20"
-                  value={voucherCode}
-                  onChange={(event) =>
-                    setVoucherCode(event.target.value.toUpperCase())
-                  }
-                  className="border-gray-200 text-sm uppercase"
-                />
+                <div className="flex gap-2">
+                  <Select
+                    value={voucherCode || "NONE"}
+                    onValueChange={handleVoucherSelect}
+                    disabled={loadingAvailableVouchers}
+                  >
+                    <SelectTrigger className="border-gray-200 text-sm">
+                      <SelectValue placeholder="Chọn voucher" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">
+                        Không áp dụng voucher
+                      </SelectItem>
+                      {availableVouchers.map((voucher) => {
+                        const discountLabel =
+                          voucher.type === "PERCENT"
+                            ? `${voucher.value}% OFF`
+                            : `${formatMoney(voucher.value)} OFF`;
+                        return (
+                          <SelectItem key={voucher.id} value={voucher.code}>
+                            {voucher.code} • {discountLabel}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      void applyVoucher();
+                    }}
+                    disabled={isValidatingVoucher || !voucherCode.trim()}
+                    className="border-gray-200"
+                  >
+                    {isValidatingVoucher ? "Checking..." : "Apply"}
+                  </Button>
+                  {voucherValidation && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={clearVoucher}
+                      className="border-gray-200"
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+
+                {voucherError && (
+                  <p className="text-xs text-red-600">{voucherError}</p>
+                )}
+
+                {voucherValidation && (
+                  <p className="text-xs text-green-700">
+                    Applied {voucherValidation.code}: -
+                    {formatMoney(voucherValidation.discountAmount)}
+                  </p>
+                )}
+
+                {loadingAvailableVouchers ? (
+                  <p className="text-xs text-gray-400">Loading vouchers...</p>
+                ) : (
+                  availableVouchers.length === 0 && (
+                    <p className="text-xs text-gray-400">
+                      No voucher available for this service.
+                    </p>
+                  )
+                )}
               </div>
             </div>
+
+            {selectedService && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium text-gray-800">
+                    {formatMoney(servicePrice)}
+                  </span>
+                </div>
+                {voucherValidation && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">
+                        Discount ({voucherValidation.code})
+                      </span>
+                      <span className="font-medium text-green-700">
+                        -{formatMoney(voucherValidation.discountAmount)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-blue-200" />
+                  </>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-800">
+                    Final Price
+                  </span>
+                  <span className="font-bold text-gray-900">
+                    {formatMoney(discountedPrice)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <Button
@@ -566,6 +811,32 @@ const BookingModal = ({
                   <span className="text-gray-600">Service</span>
                   <span className="font-semibold text-gray-800">
                     {selectedService.name}
+                  </span>
+                </div>
+              )}
+              {selectedService && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium text-gray-800">
+                    {formatMoney(servicePrice)}
+                  </span>
+                </div>
+              )}
+              {voucherValidation && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    Discount ({voucherValidation.code})
+                  </span>
+                  <span className="font-medium text-green-700">
+                    -{formatMoney(voucherValidation.discountAmount)}
+                  </span>
+                </div>
+              )}
+              {selectedService && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Final Price</span>
+                  <span className="font-semibold text-gray-800">
+                    {formatMoney(discountedPrice)}
                   </span>
                 </div>
               )}

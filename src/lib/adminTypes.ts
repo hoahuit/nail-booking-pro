@@ -12,6 +12,9 @@ export interface ApiBooking {
   endTime: string;     // ISO
   duration: number;    // minutes
   totalPrice: string;
+  discountAmount: string | null;
+  finalPrice: string | null;
+  voucherId: string | null;
   status: BookingStatus;
   notes: string | null;
   createdAt: string;
