@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
 import Butterfly from "@/components/Butterfly";
-import logoKingNails from "@/assets/logo-kingnails.png";
+import logoKingNails from "@/assets/logo-kingnailsHome.png";
 
 import heroEU from "@/assets/hero-eu.jpg";
 import heroNail from "@/assets/hero-nail.jpg";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Phone, Instagram, Facebook } from "lucide-react";
 import { BUSINESS } from "@/lib/constants";
-import logoNgang2 from "@/assets/logo-kingnails.png";
+import logoNgang2 from "@/assets/logokingnail-nav.png";
 
 interface NavbarProps {
   onBookingClick: () => void;
