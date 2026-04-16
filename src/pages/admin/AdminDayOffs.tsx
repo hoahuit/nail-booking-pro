@@ -23,7 +23,13 @@ function formatDate(date: string) {
 const AdminDayOffs = () => {
   const [form, setForm] = useState(emptyForm);
 
-  const { data = [], isLoading, isError, refetch, isFetching } = useAdminDayOffs();
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useAdminDayOffs();
   const upsert = useUpsertDayOff();
   const remove = useDeleteDayOff();
 
@@ -135,7 +141,9 @@ const AdminDayOffs = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-20 gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-            <span className="text-sm text-slate-400">Đang tải ngày nghỉ...</span>
+            <span className="text-sm text-slate-400">
+              Đang tải ngày nghỉ...
+            </span>
           </div>
         ) : isError ? (
           <div className="flex items-center justify-center py-20 text-sm text-red-500">
@@ -164,7 +172,10 @@ const AdminDayOffs = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {data.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
                     <td className="px-4 py-3.5 whitespace-nowrap text-slate-700 font-medium">
                       {formatDate(item.date)}
                     </td>
