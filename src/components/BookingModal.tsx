@@ -22,9 +22,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  listPublicDayOffsApi,
   listActiveVouchersApi,
   useCreateBooking,
   validateVoucherApi,
+  type PublicDayOff,
   type VoucherOption,
   type VoucherValidation,
 } from "@/hooks/useBooking";
@@ -100,6 +102,13 @@ function formatDisplayDate(date: Date) {
   return `${DAY_NAMES_SHORT[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+function formatDateYMD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function parseMoney(value: string): number {
   const normalized = value.replace(/[^0-9.]/g, "");
   const parsed = Number.parseFloat(normalized);
@@ -146,6 +155,7 @@ const BookingModal = ({
   );
   const [loadingAvailableVouchers, setLoadingAvailableVouchers] =
     useState(false);
+  const [dayOffs, setDayOffs] = useState<PublicDayOff[]>([]);
 
   const createBooking = useCreateBooking();
   const servicePrice = useMemo(
@@ -158,6 +168,9 @@ const BookingModal = ({
     () => buildCalendarGrid(calMonth.getFullYear(), calMonth.getMonth()),
     [calMonth],
   );
+  const dayOffByDate = useMemo(() => {
+    return new Map(dayOffs.map((item) => [item.date, item]));
+  }, [dayOffs]);
 
   const stepTitle =
     step === 1
@@ -220,6 +233,31 @@ const BookingModal = ({
       cancelled = true;
     };
   }, [open, servicePrice]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const from = formatDateYMD(
+      new Date(calMonth.getFullYear(), calMonth.getMonth(), 1),
+    );
+    const to = formatDateYMD(
+      new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0),
+    );
+
+    let cancelled = false;
+
+    listPublicDayOffsApi(from, to)
+      .then((items) => {
+        if (!cancelled) setDayOffs(items);
+      })
+      .catch(() => {
+        if (!cancelled) setDayOffs([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, calMonth]);
 
   useEffect(() => {
     setVoucherValidation(null);
@@ -289,6 +327,7 @@ const BookingModal = ({
     setVoucherCode("");
     setVoucherValidation(null);
     setVoucherError("");
+    setDayOffs([]);
     onOpenChange(false);
   };
 
@@ -413,20 +452,31 @@ const BookingModal = ({
                   }
 
                   const isPast = cell < today;
+                  const isoDate = formatDateYMD(cell);
+                  const matchedDayOff = dayOffByDate.get(isoDate);
+                  const isDayOff = !!matchedDayOff;
                   const isToday = cell.toDateString() === today.toDateString();
                   const isSelected =
                     selectedDate?.toDateString() === cell.toDateString();
+                  const isDisabled = isPast || isDayOff;
 
                   return (
                     <button
                       key={index}
-                      disabled={isPast}
+                      disabled={isDisabled}
+                      title={
+                        isDayOff
+                          ? matchedDayOff.reason
+                            ? `Day off: ${matchedDayOff.reason}`
+                            : "Day off"
+                          : undefined
+                      }
                       onClick={() => {
                         setSelectedDate(cell);
                         setSelectedTime("");
                       }}
                       className={`relative border-r border-b border-gray-200 min-h-[52px] p-1.5 text-left transition-colors ${
-                        isPast
+                        isDisabled
                           ? "opacity-40 cursor-not-allowed bg-gray-50"
                           : "hover:bg-blue-50 cursor-pointer"
                       } ${isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-500" : ""}`}
@@ -442,6 +492,11 @@ const BookingModal = ({
                       >
                         {cell.getDate()}
                       </span>
+                      {isDayOff && (
+                        <span className="absolute bottom-1 right-1 text-[9px] font-medium text-red-500">
+                          Off
+                        </span>
+                      )}
                     </button>
                   );
                 })}

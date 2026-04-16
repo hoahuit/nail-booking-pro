@@ -27,6 +27,11 @@ export type VoucherOption = {
   expiresAt: string | null;
 };
 
+export type PublicDayOff = {
+  date: string;
+  reason: string | null;
+};
+
 export async function warmupBookingApi(): Promise<void> {
   if (bookingApiWarmed) return;
   try {
@@ -63,6 +68,21 @@ export async function listActiveVouchersApi(): Promise<VoucherOption[]> {
   });
 
   // This endpoint may be protected depending on backend config.
+  if (!res.ok) return [];
+
+  const json = await res.json().catch(() => ({ data: [] }));
+  return Array.isArray(json.data) ? json.data : [];
+}
+
+export async function listPublicDayOffsApi(
+  from: string,
+  to: string,
+): Promise<PublicDayOff[]> {
+  const params = new URLSearchParams({ from, to });
+  const res = await fetch(`/api/v1/bookings/day-offs?${params.toString()}`, {
+    method: "GET",
+  });
+
   if (!res.ok) return [];
 
   const json = await res.json().catch(() => ({ data: [] }));

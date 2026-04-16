@@ -9,6 +9,7 @@ import AdminLogin from "./pages/admin/AdminLogin.tsx";
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
 import AdminBookings from "./pages/admin/AdminBookings.tsx";
+import AdminDayOffs from "./pages/admin/AdminDayOffs.tsx";
 import AdminServices from "./pages/admin/AdminServices.tsx";
 import AdminPoints from "./pages/admin/AdminPoints.tsx";
 import AdminVouchers from "./pages/admin/AdminVouchers.tsx";
@@ -46,6 +47,7 @@ const App = () => (
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="bookings" element={<AdminBookings />} />
+            <Route path="day-offs" element={<AdminDayOffs />} />
             <Route path="services" element={<AdminServices />} />
             <Route path="points" element={<AdminPoints />} />
             <Route path="vouchers" element={<AdminVouchers />} />

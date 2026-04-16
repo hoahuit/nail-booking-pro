@@ -4,6 +4,7 @@ import { useLogout } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   CalendarDays,
+  CalendarX2,
   Scissors,
   Star,
   Tag,
@@ -23,6 +24,7 @@ const navGroups = [
     links: [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Tổng quan" },
       { to: "/admin/bookings", icon: CalendarDays, label: "Lịch đặt" },
+      { to: "/admin/day-offs", icon: CalendarX2, label: "Ngày nghỉ" },
     ],
   },
   {
@@ -38,6 +40,7 @@ const navGroups = [
 const PAGE_LABELS: Record<string, string> = {
   "/admin/dashboard": "Tổng quan",
   "/admin/bookings": "Lịch đặt",
+  "/admin/day-offs": "Ngày nghỉ",
   "/admin/services": "Dịch vụ",
   "/admin/points": "Điểm thưởng",
   "/admin/vouchers": "Voucher",

@@ -24,6 +24,14 @@ export interface ApiBooking {
   user: { name: string; email: string } | null;
 }
 
+export interface ApiDayOff {
+  id: string;
+  date: string;
+  reason: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // ── Legacy shape kept for AdminPoints (mock data) ──────────────────────────────
 export type LegacyBookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
