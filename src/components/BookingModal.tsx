@@ -598,8 +598,6 @@ const BookingModal = ({
                   label: "Any Available Staff",
                   sub: "We will assign the best available",
                 },
-                { id: "staff-1", label: "Staff 1", sub: "Available" },
-                { id: "staff-2", label: "Staff 2", sub: "Available" },
               ].map((member) => (
                 <div
                   key={member.id}
