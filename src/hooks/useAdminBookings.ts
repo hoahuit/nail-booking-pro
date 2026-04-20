@@ -20,6 +20,16 @@ export interface BookingFilters {
   limit?: number;
 }
 
+export interface CreateAdminBookingPayload {
+  serviceId: string;
+  startTime: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  notes?: string;
+  staffId?: string;
+}
+
 interface ApiListResponse {
   success: boolean;
   data: ApiBooking[];
@@ -68,6 +78,41 @@ async function patchStatus(id: string, status: BookingStatus): Promise<ApiBookin
   return json.data;
 }
 
+async function createAdminBooking(
+  payload: CreateAdminBookingPayload,
+): Promise<ApiBooking> {
+  const body: Record<string, unknown> = {
+    serviceId: payload.serviceId,
+    startTime: payload.startTime,
+    customerName: payload.customerName,
+    customerPhone: payload.customerPhone,
+  };
+
+  if (payload.customerEmail?.trim()) {
+    body.customerEmail = payload.customerEmail.trim();
+  }
+  if (payload.notes?.trim()) {
+    body.notes = payload.notes.trim();
+  }
+  if (payload.staffId) {
+    body.staffId = payload.staffId;
+  }
+
+  const res = await fetch("/api/v1/bookings", {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Tạo booking thất bại (${res.status})`);
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 export function useAdminBookings(filters: BookingFilters) {
@@ -97,6 +142,20 @@ export function useUpdateBookingStatus() {
     },
     onError: (err) => {
       toast.error(err.message || "Cập nhật thất bại");
+    },
+  });
+}
+
+export function useCreateAdminBooking() {
+  const queryClient = useQueryClient();
+  return useMutation<ApiBooking, Error, CreateAdminBookingPayload>({
+    mutationFn: createAdminBooking,
+    onSuccess: () => {
+      toast.success("Đã tạo booking mới");
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Tạo booking thất bại");
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -16,12 +16,23 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
+  Plus,
 } from "lucide-react";
 import {
   useAdminBookings,
+  useCreateAdminBooking,
   useUpdateBookingStatus,
 } from "@/hooks/useAdminBookings";
+import { useAdminServices } from "@/hooks/useAdminServices";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ApiBooking, BookingStatus } from "@/lib/adminTypes";
+import { toast } from "sonner";
 
 const STATUS_TABS: { key: BookingStatus | "ALL"; label: string }[] = [
   { key: "ALL", label: "Tất cả" },
@@ -48,6 +59,14 @@ const STATUS_BADGE: Record<BookingStatus, string> = {
   NO_SHOW: "bg-slate-100 text-slate-600 border border-slate-200",
 };
 
+const STATUS_CARD: Record<BookingStatus, string> = {
+  PENDING: "border-amber-300 bg-amber-50/95",
+  CONFIRMED: "border-blue-300 bg-blue-50/95",
+  COMPLETED: "border-emerald-300 bg-emerald-50/95",
+  CANCELLED: "border-rose-300 bg-rose-50/95",
+  NO_SHOW: "border-slate-300 bg-slate-100/95",
+};
+
 const STATUS_EVENT: Record<BookingStatus, string> = {
   PENDING: "bg-amber-500",
   CONFIRMED: "bg-blue-500",
@@ -65,6 +84,14 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 };
 
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const STAFF_COLUMN_COUNT = 3;
+const WORK_START_HOUR = 9;
+const WORK_END_HOUR = 18;
+const SLOT_MINUTES = 15;
+const SLOT_ROW_HEIGHT_PX = 60;
+const WORK_START_MINUTES = WORK_START_HOUR * 60;
+const WORK_END_MINUTES = WORK_END_HOUR * 60;
+const SLOT_COUNT = (WORK_END_MINUTES - WORK_START_MINUTES) / SLOT_MINUTES;
 
 function toDateInputValue(date: Date): string {
   const year = date.getFullYear();
@@ -108,6 +135,17 @@ function timeOnly(iso: string): string {
   });
 }
 
+function minutesOfDay(iso: string): number {
+  const date = new Date(iso);
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function formatMinutesLabel(totalMinutes: number): string {
+  const hour = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const minute = String(totalMinutes % 60).padStart(2, "0");
+  return `${hour}:${minute}`;
+}
+
 function buildMonthGrid(referenceDate: string): Date[] {
   const first = startOfMonth(referenceDate);
   const start = new Date(first);
@@ -126,6 +164,12 @@ function dayKey(date: Date): string {
   return toDateInputValue(date);
 }
 
+function combineDateTimeToIso(date: string, time: string): string | null {
+  const parsed = new Date(`${date}T${time}:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
 const AdminBookings = () => {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "ALL">(
     "ALL",
@@ -137,6 +181,17 @@ const AdminBookings = () => {
   const [selectedDate, setSelectedDate] = useState(() =>
     toDateInputValue(new Date()),
   );
+  const [quickBookingForm, setQuickBookingForm] = useState({
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    serviceId: "",
+    date: toDateInputValue(new Date()),
+    time: "09:00",
+    notes: "",
+  });
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
+  const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
 
   const commonFilters = {
     status: statusFilter,
@@ -174,6 +229,12 @@ const AdminBookings = () => {
     status: "NO_SHOW",
   });
   const updateStatus = useUpdateBookingStatus();
+  const createBooking = useCreateAdminBooking();
+  const servicesQuery = useAdminServices({
+    isActive: true,
+    page: 1,
+    limit: 100,
+  });
 
   const tabCounts: Record<BookingStatus | "ALL", number> = {
     ALL: allCountQuery.data?.meta?.total ?? 0,
@@ -186,6 +247,20 @@ const AdminBookings = () => {
 
   const monthBookings = monthQuery.data?.data ?? [];
   const selectedDayBookings = dayQuery.data?.data ?? [];
+  const availableServices = servicesQuery.data?.data ?? [];
+
+  useEffect(() => {
+    setQuickBookingForm((prev) =>
+      prev.date === selectedDate ? prev : { ...prev, date: selectedDate },
+    );
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (availableServices.length === 0) return;
+    setQuickBookingForm((prev) =>
+      prev.serviceId ? prev : { ...prev, serviceId: availableServices[0].id },
+    );
+  }, [availableServices]);
 
   const currentMonthStart = startOfMonth(monthCursor);
   const currentMonth = currentMonthStart.getMonth();
@@ -225,7 +300,206 @@ const AdminBookings = () => {
 
   const gridCells = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
 
-  const selectedBooking = selectedDayBookings[0] ?? null;
+  const staffLaneLabels = useMemo(() => {
+    const uniqueStaff = Array.from(
+      new Set(
+        selectedDayBookings
+          .map((booking) => booking.staff?.name?.trim())
+          .filter((name): name is string => Boolean(name)),
+      ),
+    ).slice(0, STAFF_COLUMN_COUNT);
+
+    const lanes = uniqueStaff.slice();
+    while (lanes.length < STAFF_COLUMN_COUNT) {
+      lanes.push(`${lanes.length + 1}`);
+    }
+
+    return lanes;
+  }, [selectedDayBookings]);
+
+  const dayBookingColumns = useMemo(() => {
+    const lanes = staffLaneLabels.map((label) => ({
+      label,
+      bookings: [] as ApiBooking[],
+    }));
+    const laneEndTime = new Array(STAFF_COLUMN_COUNT).fill(0);
+    const sortedBookings = selectedDayBookings
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
+
+    for (const booking of sortedBookings) {
+      const start = new Date(booking.startTime).getTime();
+      const end = new Date(booking.endTime).getTime();
+      const preferredLane = booking.staff?.name
+        ? staffLaneLabels.findIndex((label) => label === booking.staff?.name)
+        : -1;
+
+      let targetLane = -1;
+
+      if (preferredLane >= 0 && start >= laneEndTime[preferredLane]) {
+        targetLane = preferredLane;
+      } else {
+        targetLane = laneEndTime.findIndex((laneEnd) => start >= laneEnd);
+      }
+
+      if (targetLane < 0 && preferredLane >= 0) {
+        targetLane = preferredLane;
+      }
+
+      if (targetLane < 0) {
+        targetLane = laneEndTime.reduce(
+          (bestIndex, laneEnd, index) =>
+            laneEnd < laneEndTime[bestIndex] ? index : bestIndex,
+          0,
+        );
+      }
+
+      lanes[targetLane].bookings.push(booking);
+      laneEndTime[targetLane] = Math.max(laneEndTime[targetLane], end);
+    }
+
+    return lanes;
+  }, [selectedDayBookings, staffLaneLabels]);
+
+  const dayTimeSlots = useMemo(
+    () =>
+      Array.from({ length: SLOT_COUNT }, (_, index) => {
+        const minutes = WORK_START_MINUTES + index * SLOT_MINUTES;
+        const minute = minutes % 60;
+        const hour24 = Math.floor(minutes / 60);
+        const hour12Raw = hour24 % 12;
+        const hour12 = hour12Raw === 0 ? 12 : hour12Raw;
+
+        return {
+          index,
+          minute,
+          minuteLabel: `:${String(minute).padStart(2, "0")}`,
+          isHourStart: minute === 0,
+          hour24,
+          hour12,
+          periodLabel: hour24 < 12 ? "A.M." : "P.M.",
+          bandIndex: Math.floor((minutes - WORK_START_MINUTES) / 60),
+        };
+      }),
+    [],
+  );
+
+  const bookingPlacements = useMemo(() => {
+    const placements: Array<{
+      booking: ApiBooking;
+      laneIndex: number;
+      rowStart: number;
+      rowSpan: number;
+    }> = [];
+
+    dayBookingColumns.forEach((column, laneIndex) => {
+      column.bookings.forEach((booking) => {
+        const start = minutesOfDay(booking.startTime);
+        const end = minutesOfDay(booking.endTime);
+
+        if (end <= WORK_START_MINUTES || start >= WORK_END_MINUTES) {
+          return;
+        }
+
+        const clampedStart = Math.max(start, WORK_START_MINUTES);
+        const clampedEnd = Math.min(
+          end > clampedStart ? end : clampedStart + SLOT_MINUTES,
+          WORK_END_MINUTES,
+        );
+
+        const startSlot = Math.floor(
+          (clampedStart - WORK_START_MINUTES) / SLOT_MINUTES,
+        );
+        const endSlot = Math.ceil(
+          (clampedEnd - WORK_START_MINUTES) / SLOT_MINUTES,
+        );
+
+        const boundedStartSlot = Math.min(
+          Math.max(startSlot, 0),
+          SLOT_COUNT - 1,
+        );
+        const boundedEndSlot = Math.min(
+          Math.max(endSlot, boundedStartSlot + 1),
+          SLOT_COUNT,
+        );
+
+        placements.push({
+          booking,
+          laneIndex,
+          rowStart: boundedStartSlot + 1,
+          rowSpan: Math.max(1, boundedEndSlot - boundedStartSlot),
+        });
+      });
+    });
+
+    return placements;
+  }, [dayBookingColumns]);
+
+  const timelineColumnTemplate = `72px repeat(${STAFF_COLUMN_COUNT}, minmax(0, 1fr))`;
+  const timelineRowTemplate = `repeat(${SLOT_COUNT}, minmax(${SLOT_ROW_HEIGHT_PX}px, ${SLOT_ROW_HEIGHT_PX}px))`;
+
+  const quickFormReady = Boolean(
+    quickBookingForm.customerName.trim() &&
+    quickBookingForm.customerPhone.trim() &&
+    quickBookingForm.customerEmail.trim() &&
+    quickBookingForm.serviceId &&
+    quickBookingForm.date &&
+    quickBookingForm.time,
+  );
+
+  const openQuickCreateForDate = (date: string) => {
+    setSelectedDate(date);
+    setMonthCursor(date);
+    setQuickBookingForm((prev) => ({ ...prev, date }));
+    setIsQuickCreateOpen(true);
+  };
+
+  const openDayDetailModal = (date: string) => {
+    setSelectedDate(date);
+    setMonthCursor(date);
+    setIsDayDetailModalOpen(true);
+  };
+
+  const handleQuickBookingSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const startTime = combineDateTimeToIso(
+      quickBookingForm.date,
+      quickBookingForm.time,
+    );
+    if (!startTime) {
+      toast.error("Ngày giờ không hợp lệ");
+      return;
+    }
+
+    createBooking.mutate(
+      {
+        serviceId: quickBookingForm.serviceId,
+        startTime,
+        customerName: quickBookingForm.customerName.trim(),
+        customerPhone: quickBookingForm.customerPhone.trim(),
+        customerEmail: quickBookingForm.customerEmail.trim(),
+        notes: quickBookingForm.notes.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setSelectedDate(quickBookingForm.date);
+          setMonthCursor(quickBookingForm.date);
+          setQuickBookingForm((prev) => ({
+            ...prev,
+            customerName: "",
+            customerPhone: "",
+            customerEmail: "",
+            notes: "",
+          }));
+          setIsQuickCreateOpen(false);
+        },
+      },
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -325,7 +599,7 @@ const AdminBookings = () => {
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,620px)] gap-4 items-start">
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {monthQuery.isLoading ? (
             <div className="flex items-center justify-center py-24 gap-3">
@@ -361,14 +635,23 @@ const AdminBookings = () => {
                   const isToday = key === toDateInputValue(new Date());
 
                   return (
-                    <button
+                    <div
                       key={key}
                       onClick={() => setSelectedDate(key)}
+                      onDoubleClick={() => openDayDetailModal(key)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setSelectedDate(key);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       className={`min-h-[112px] p-1.5 border-r border-b border-slate-100 text-left align-top transition-colors ${
                         isCurrentMonth
                           ? "bg-white hover:bg-blue-50/50"
                           : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                      } ${isSelected ? "ring-2 ring-inset ring-blue-500" : ""}`}
+                      } ${isSelected ? "ring-2 ring-inset ring-blue-500" : ""} cursor-pointer`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span
@@ -380,11 +663,28 @@ const AdminBookings = () => {
                         >
                           {cell.getDate()}
                         </span>
-                        {events.length > 0 && (
-                          <span className="text-[10px] font-medium text-slate-400">
-                            {events.length}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {isCurrentMonth && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openQuickCreateForDate(key);
+                              }}
+                              onDoubleClick={(event) => event.stopPropagation()}
+                              className="w-5 h-5 inline-flex items-center justify-center rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Tạo booking ngày này"
+                              aria-label={`Tạo booking ngày ${key}`}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {events.length > 0 && (
+                            <span className="text-[10px] font-medium text-slate-400">
+                              {events.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-1">
@@ -403,7 +703,7 @@ const AdminBookings = () => {
                           </div>
                         )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -419,6 +719,182 @@ const AdminBookings = () => {
             </p>
           </div>
 
+          <div className="mb-4 border border-slate-200 rounded-lg p-3 bg-slate-50/70">
+            <button
+              type="button"
+              onClick={() => {
+                setQuickBookingForm((prev) => ({
+                  ...prev,
+                  date: selectedDate,
+                }));
+                setIsQuickCreateOpen((prev) => !prev);
+              }}
+              className="w-full flex items-center justify-between text-xs font-semibold text-slate-700"
+            >
+              <span>Tạo booking cho ngày đã chọn</span>
+              <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-blue-600 text-white">
+                <Plus className="w-3.5 h-3.5" />
+              </span>
+            </button>
+
+            {isQuickCreateOpen && (
+              <form
+                onSubmit={handleQuickBookingSubmit}
+                className="mt-3 space-y-2.5"
+              >
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    Ngày
+                  </label>
+                  <input
+                    type="date"
+                    value={quickBookingForm.date}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setQuickBookingForm((prev) => ({ ...prev, date: value }));
+                      setSelectedDate(value);
+                      setMonthCursor(value);
+                    }}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Giờ *
+                    </label>
+                    <input
+                      type="time"
+                      step={1800}
+                      value={quickBookingForm.time}
+                      onChange={(event) =>
+                        setQuickBookingForm((prev) => ({
+                          ...prev,
+                          time: event.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Dịch vụ *
+                    </label>
+                    <select
+                      value={quickBookingForm.serviceId}
+                      onChange={(event) =>
+                        setQuickBookingForm((prev) => ({
+                          ...prev,
+                          serviceId: event.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                    >
+                      {servicesQuery.isLoading && <option>Đang tải...</option>}
+                      {!servicesQuery.isLoading &&
+                        availableServices.length === 0 && (
+                          <option value="">Không có dịch vụ</option>
+                        )}
+                      {availableServices.map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    Khách hàng *
+                  </label>
+                  <input
+                    value={quickBookingForm.customerName}
+                    onChange={(event) =>
+                      setQuickBookingForm((prev) => ({
+                        ...prev,
+                        customerName: event.target.value,
+                      }))
+                    }
+                    placeholder="Nguyễn Văn A"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      SĐT *
+                    </label>
+                    <input
+                      value={quickBookingForm.customerPhone}
+                      onChange={(event) =>
+                        setQuickBookingForm((prev) => ({
+                          ...prev,
+                          customerPhone: event.target.value,
+                        }))
+                      }
+                      placeholder="0901234567"
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={quickBookingForm.customerEmail}
+                      onChange={(event) =>
+                        setQuickBookingForm((prev) => ({
+                          ...prev,
+                          customerEmail: event.target.value,
+                        }))
+                      }
+                      placeholder="khach@example.com"
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    Ghi chú
+                  </label>
+                  <input
+                    value={quickBookingForm.notes}
+                    onChange={(event) =>
+                      setQuickBookingForm((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                    placeholder="Ghi chú thêm (nếu có)"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={
+                    createBooking.isPending ||
+                    !quickFormReady ||
+                    servicesQuery.isLoading ||
+                    availableServices.length === 0
+                  }
+                  className="w-full px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {createBooking.isPending
+                    ? "Đang tạo..."
+                    : "Xác nhận tạo booking"}
+                </button>
+              </form>
+            )}
+          </div>
+
           {dayQuery.isLoading ? (
             <div className="h-[220px] flex items-center justify-center gap-2 text-slate-400 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -430,89 +906,314 @@ const AdminBookings = () => {
               <p>Không có booking trong ngày này</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
-              {selectedDayBookings.map((booking) => (
+            <div className="space-y-3 max-h-[680px] overflow-y-auto pr-1">
+              <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
                 <div
-                  key={booking.id}
-                  className="border border-slate-100 rounded-lg p-3 space-y-2"
+                  className="grid border-b border-slate-200"
+                  style={{ gridTemplateColumns: timelineColumnTemplate }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-slate-800 text-sm">
-                        {booking.customerName}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {booking.service.name}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-medium ${STATUS_BADGE[booking.status]}`}
+                  <div className="px-2 py-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border-r border-slate-200">
+                    Giờ
+                  </div>
+                  {dayBookingColumns.map((column, index) => (
+                    <div
+                      key={`${column.label}-header-${index}`}
+                      className="px-2 py-2 text-[11px] font-semibold text-slate-700 bg-slate-50 border-r border-slate-200 last:border-r-0"
                     >
-                      {STATUS_LABEL[booking.status]}
-                    </span>
-                  </div>
+                      <p>{column.label}</p>
+                    </div>
+                  ))}
+                </div>
 
-                  <div className="space-y-1.5 text-xs text-slate-600">
-                    <div className="flex items-center gap-1.5">
-                      <Clock3 className="w-3.5 h-3.5 text-slate-400" />
-                      {timeOnly(booking.startTime)} -{" "}
-                      {timeOnly(booking.endTime)}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      {booking.staff?.name ?? "Chưa phân công"}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      {booking.customerPhone}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      {booking.customerEmail ?? "-"}
-                    </div>
-                    <div className="flex items-start gap-1.5">
-                      <StickyNote className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
-                      <span>{booking.notes ?? "Không có ghi chú"}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-1 border-t border-slate-100">
-                    <div className="flex flex-wrap gap-1.5">
-                      {(TRANSITIONS[booking.status] ?? []).map((next) => (
-                        <button
-                          key={next}
-                          onClick={() =>
-                            updateStatus.mutate({
-                              id: booking.id,
-                              status: next,
-                            })
-                          }
-                          disabled={updateStatus.isPending}
-                          className={`px-2 py-1 rounded-md text-[10px] font-medium border transition-colors disabled:opacity-50 ${STATUS_BADGE[next]}`}
+                <div className="relative">
+                  <div
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: timelineColumnTemplate,
+                      gridTemplateRows: timelineRowTemplate,
+                    }}
+                  >
+                    {dayTimeSlots.map((slot) => (
+                      <Fragment key={`slot-${slot.index}`}>
+                        <div
+                          className={`px-1.5 text-[10px] border-r border-b border-slate-200 ${
+                            slot.bandIndex % 2 === 0 ? "bg-rose-50" : "bg-white"
+                          } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
                         >
-                          {next === "CONFIRMED" && (
-                            <CheckCircle2 className="inline w-3 h-3 mr-1" />
+                          <div className="h-full grid grid-cols-[38px_1fr] items-start pt-0.5">
+                            <div className="flex flex-col items-center justify-start">
+                              {slot.isHourStart && (
+                                <>
+                                  <span className="w-6 h-6 inline-flex items-center justify-center rounded-full border border-slate-700 text-[12px] font-bold text-slate-800 leading-none bg-white/90">
+                                    {slot.hour12}
+                                  </span>
+                                  <span className="mt-0.5 text-[8px] font-semibold text-slate-600 tracking-wide leading-none">
+                                    {slot.periodLabel}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="text-[10px] font-semibold text-slate-600 leading-none pt-0.5">
+                              {slot.minuteLabel}
+                            </div>
+                          </div>
+                        </div>
+
+                        {dayBookingColumns.map((_, laneIndex) => (
+                          <div
+                            key={`slot-${slot.index}-lane-${laneIndex}`}
+                            className={`border-r border-b border-slate-200 last:border-r-0 ${
+                              slot.bandIndex % 2 === 0
+                                ? "bg-rose-50/65"
+                                : "bg-white"
+                            } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
+                          />
+                        ))}
+                      </Fragment>
+                    ))}
+                  </div>
+
+                  <div
+                    className="pointer-events-none absolute inset-0 grid p-1"
+                    style={{
+                      gridTemplateColumns: timelineColumnTemplate,
+                      gridTemplateRows: timelineRowTemplate,
+                    }}
+                  >
+                    {bookingPlacements.map((placement) => {
+                      const booking = placement.booking;
+                      const transitions = TRANSITIONS[booking.status] ?? [];
+                      const showDetails = placement.rowSpan >= 3;
+                      const showActions =
+                        transitions.length > 0 && placement.rowSpan >= 2;
+
+                      return (
+                        <div
+                          key={booking.id}
+                          className={`pointer-events-auto rounded-md border shadow-sm px-1.5 py-1 overflow-hidden min-h-[56px] ${STATUS_CARD[booking.status]}`}
+                          style={{
+                            gridColumn: placement.laneIndex + 2,
+                            gridRow: `${placement.rowStart} / span ${placement.rowSpan}`,
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-1">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold text-slate-800 truncate">
+                                {booking.customerName}
+                              </p>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {timeOnly(booking.startTime)} -{" "}
+                                {timeOnly(booking.endTime)}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap ${STATUS_BADGE[booking.status]}`}
+                            >
+                              {STATUS_LABEL[booking.status]}
+                            </span>
+                          </div>
+
+                          {showDetails && (
+                            <div className="mt-1 text-[10px] text-slate-600 space-y-0.5">
+                              <p className="truncate">{booking.service.name}</p>
+                              <p className="truncate">
+                                {booking.customerPhone}
+                              </p>
+                            </div>
                           )}
-                          {next === "COMPLETED" && (
-                            <CheckCircle2 className="inline w-3 h-3 mr-1" />
+
+                          {showActions && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {transitions.map((next) => (
+                                <button
+                                  key={next}
+                                  onClick={() =>
+                                    updateStatus.mutate({
+                                      id: booking.id,
+                                      status: next,
+                                    })
+                                  }
+                                  disabled={updateStatus.isPending}
+                                  className={`px-1 py-0.5 rounded text-[9px] font-medium border transition-colors disabled:opacity-50 ${STATUS_BADGE[next]}`}
+                                >
+                                  {next === "CONFIRMED" && (
+                                    <CheckCircle2 className="inline w-2.5 h-2.5 mr-0.5" />
+                                  )}
+                                  {next === "COMPLETED" && (
+                                    <CheckCircle2 className="inline w-2.5 h-2.5 mr-0.5" />
+                                  )}
+                                  {next === "NO_SHOW" && (
+                                    <AlertCircle className="inline w-2.5 h-2.5 mr-0.5" />
+                                  )}
+                                  {next === "CANCELLED" && (
+                                    <Ban className="inline w-2.5 h-2.5 mr-0.5" />
+                                  )}
+                                  {STATUS_LABEL[next]}
+                                </button>
+                              ))}
+                            </div>
                           )}
-                          {next === "NO_SHOW" && (
-                            <AlertCircle className="inline w-3 h-3 mr-1" />
-                          )}
-                          {next === "CANCELLED" && (
-                            <Ban className="inline w-3 h-3 mr-1" />
-                          )}
-                          {STATUS_LABEL[next]}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+
+                <div
+                  className="grid"
+                  style={{ gridTemplateColumns: timelineColumnTemplate }}
+                >
+                  <div className="px-2 py-1.5 text-[10px] text-slate-500 border-r border-slate-200 bg-slate-50">
+                    {formatMinutesLabel(WORK_END_MINUTES)}
+                  </div>
+                  {dayBookingColumns.map((_, index) => (
+                    <div
+                      key={`footer-${index}`}
+                      className="border-r border-slate-200 last:border-r-0 bg-slate-50"
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      <Dialog
+        open={isDayDetailModalOpen}
+        onOpenChange={setIsDayDetailModalOpen}
+      >
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+            <DialogTitle className="text-base text-slate-800 capitalize">
+              Chi tiết booking - {dayTitle(selectedDate)}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Popup xác nhận nhanh khi double click vào ô ngày trên lịch tháng.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-4 max-h-[72vh] overflow-y-auto">
+            {dayQuery.isLoading || dayQuery.isFetching ? (
+              <div className="h-[220px] flex items-center justify-center gap-2 text-slate-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Đang tải booking trong ngày...
+              </div>
+            ) : selectedDayBookings.length === 0 ? (
+              <div className="h-[220px] flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
+                <CalendarDays className="w-6 h-6" />
+                <p>Không có booking trong ngày này</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {selectedDayBookings
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(a.startTime).getTime() -
+                      new Date(b.startTime).getTime(),
+                  )
+                  .map((booking) => {
+                    const transitions = TRANSITIONS[booking.status] ?? [];
+
+                    return (
+                      <div
+                        key={`modal-${booking.id}`}
+                        className={`rounded-lg border p-3 space-y-2 ${STATUS_CARD[booking.status]}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">
+                              {booking.customerName}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {booking.service.name}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${STATUS_BADGE[booking.status]}`}
+                          >
+                            {STATUS_LABEL[booking.status]}
+                          </span>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              Giờ:
+                            </span>{" "}
+                            {timeOnly(booking.startTime)} -{" "}
+                            {timeOnly(booking.endTime)}
+                          </p>
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              Thợ:
+                            </span>{" "}
+                            {booking.staff?.name ?? "Chưa phân công"}
+                          </p>
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              SĐT:
+                            </span>{" "}
+                            {booking.customerPhone}
+                          </p>
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              Email:
+                            </span>{" "}
+                            {booking.customerEmail ?? "-"}
+                          </p>
+                        </div>
+
+                        {booking.notes && (
+                          <p className="text-xs text-slate-600">
+                            <span className="font-medium text-slate-700">
+                              Ghi chú:
+                            </span>{" "}
+                            {booking.notes}
+                          </p>
+                        )}
+
+                        {transitions.length > 0 && (
+                          <div className="pt-1 border-t border-slate-200/80 flex flex-wrap gap-1.5">
+                            {transitions.map((next) => (
+                              <button
+                                key={`modal-${booking.id}-${next}`}
+                                onClick={() =>
+                                  updateStatus.mutate({
+                                    id: booking.id,
+                                    status: next,
+                                  })
+                                }
+                                disabled={updateStatus.isPending}
+                                className={`px-2 py-1 rounded-md text-[10px] font-medium border transition-colors disabled:opacity-50 ${STATUS_BADGE[next]}`}
+                              >
+                                {next === "CONFIRMED" && (
+                                  <CheckCircle2 className="inline w-3 h-3 mr-1" />
+                                )}
+                                {next === "COMPLETED" && (
+                                  <CheckCircle2 className="inline w-3 h-3 mr-1" />
+                                )}
+                                {next === "NO_SHOW" && (
+                                  <AlertCircle className="inline w-3 h-3 mr-1" />
+                                )}
+                                {next === "CANCELLED" && (
+                                  <Ban className="inline w-3 h-3 mr-1" />
+                                )}
+                                {STATUS_LABEL[next]}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
