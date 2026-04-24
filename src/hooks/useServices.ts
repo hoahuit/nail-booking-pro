@@ -10,6 +10,7 @@ interface ApiService {
   image: string;
   duration: number;
   price: string;
+  priceMax: string | null;
   category: string;
   isActive: boolean;
 }
@@ -34,8 +35,7 @@ async function fetchServices(): Promise<ServiceCategory[]> {
     categoryMap.get(key)!.push({
       id: svc.id,
       name: svc.name,
-      price: `$${svc.price}`,
-      duration: `${svc.duration}m`,
+      price: `${svc.price}£`,      priceMax: svc.priceMax ? `£${svc.priceMax}` : null,      duration: `${svc.duration}m`,
       image: resolveAssetUrl(svc.image),
       categoryKey: key,
     });

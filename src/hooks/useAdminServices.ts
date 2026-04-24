@@ -18,7 +18,8 @@ export interface ApiService {
   description: string | null;
   image: string | null;
   duration: number;
-  price: string; // Decimal comes as string from Prisma JSON
+  price: string;
+  priceMax: string | null; 
   category: string;
   isActive: boolean;
   createdAt: string;
@@ -39,6 +40,7 @@ export interface ServicePayload {
   image?: string;
   duration: number;
   price: number;
+  priceMax?: number | null;
   category: string;
   isActive?: boolean;
 }
@@ -92,7 +94,6 @@ export function useServiceCategories() {
 }
 
 export function useCreateService() {
-    debugger
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: ServicePayload) => {
@@ -118,6 +119,7 @@ export function useUpdateService() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<ServicePayload> }) => {
+      debugger
       const res = await fetch(`/api/v1/services/${id}`, {
         method: "PATCH",
         headers: adminHeaders(),

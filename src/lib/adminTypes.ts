@@ -17,10 +17,18 @@ export interface ApiBooking {
   voucherId: string | null;
   status: BookingStatus;
   notes: string | null;
+  designImage: string | null;
   createdAt: string;
   updatedAt: string;
-  service: { name: string; category: string };
+  service: { name: string; category: string } | null;
   staff: { name: string } | null;
+  items?: {
+    service: { name: string; category: string } | null;
+    staff: { name: string } | null;
+    startTime: string;
+    endTime: string;
+    price: number;
+  }[];
   user: { name: string; email: string } | null;
 }
 

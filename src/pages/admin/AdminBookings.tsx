@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
+﻿import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -84,6 +84,7 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 };
 
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const STAFF_FALLBACK_LABELS = ["A", "B", "C", "D", "E", "F"];
 const STAFF_COLUMN_COUNT = 3;
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 18;
@@ -192,6 +193,10 @@ const AdminBookings = () => {
   });
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null,
+  );
+  const [view, setView] = useState<"calendar" | "day" | "detail">("calendar");
 
   const commonFilters = {
     status: statusFilter,
@@ -311,7 +316,9 @@ const AdminBookings = () => {
 
     const lanes = uniqueStaff.slice();
     while (lanes.length < STAFF_COLUMN_COUNT) {
-      lanes.push(`${lanes.length + 1}`);
+      lanes.push(
+        STAFF_FALLBACK_LABELS[lanes.length] ?? `Thợ ${lanes.length + 1}`,
+      );
     }
 
     return lanes;
@@ -441,6 +448,27 @@ const AdminBookings = () => {
   const timelineColumnTemplate = `72px repeat(${STAFF_COLUMN_COUNT}, minmax(0, 1fr))`;
   const timelineRowTemplate = `repeat(${SLOT_COUNT}, minmax(${SLOT_ROW_HEIGHT_PX}px, ${SLOT_ROW_HEIGHT_PX}px))`;
 
+  const selectedBooking = useMemo(
+    () =>
+      selectedDayBookings.find((booking) => booking.id === selectedBookingId) ??
+      null,
+    [selectedBookingId, selectedDayBookings],
+  );
+
+  useEffect(() => {
+    if (selectedDayBookings.length === 0) {
+      setSelectedBookingId(null);
+      return;
+    }
+
+    setSelectedBookingId((prev) => {
+      if (prev && selectedDayBookings.some((booking) => booking.id === prev)) {
+        return prev;
+      }
+      return selectedDayBookings[0].id;
+    });
+  }, [selectedDayBookings]);
+
   const quickFormReady = Boolean(
     quickBookingForm.customerName.trim() &&
     quickBookingForm.customerPhone.trim() &&
@@ -461,6 +489,12 @@ const AdminBookings = () => {
     setSelectedDate(date);
     setMonthCursor(date);
     setIsDayDetailModalOpen(true);
+  };
+
+  const openDayView = (date: string) => {
+    setSelectedDate(date);
+    setMonthCursor(date);
+    setView("day");
   };
 
   const handleQuickBookingSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -527,7 +561,6 @@ const AdminBookings = () => {
           Làm mới
         </button>
       </div>
-
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="relative flex-1 min-w-[220px] max-w-sm">
@@ -598,488 +631,513 @@ const AdminBookings = () => {
           </div>
         </div>
       </div>
-
-      <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,620px)] gap-4 items-start">
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-          {monthQuery.isLoading ? (
-            <div className="flex items-center justify-center py-24 gap-3">
-              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-              <span className="text-sm text-slate-400">Đang tải lịch đặt…</span>
-            </div>
-          ) : monthQuery.isError ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <XCircle className="w-8 h-8 text-red-300" />
-              <p className="text-sm text-slate-500">
-                Không thể tải dữ liệu. Kiểm tra kết nối backend.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-7 border-b border-slate-200">
-                {WEEK_DAYS.map((day) => (
-                  <div
-                    key={day}
-                    className="py-2 text-center text-[11px] font-semibold tracking-wider text-white bg-blue-600 border-r border-blue-500 last:border-r-0"
-                  >
-                    {day}
-                  </div>
-                ))}
+      {view === "day" && (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setView("calendar")}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Quay lại lịch
+              </button>
+              <div className="flex items-center gap-2">
+                <Clock3 className="w-4 h-4 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-700 capitalize">
+                  {dayTitle(selectedDate)}
+                </p>
               </div>
-
-              <div className="grid grid-cols-7">
-                {gridCells.map((cell) => {
-                  const key = dayKey(cell);
-                  const events = monthEventsMap.get(key) ?? [];
-                  const isCurrentMonth = cell.getMonth() === currentMonth;
-                  const isSelected = key === selectedDate;
-                  const isToday = key === toDateInputValue(new Date());
-
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => setSelectedDate(key)}
-                      onDoubleClick={() => openDayDetailModal(key)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          setSelectedDate(key);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      className={`min-h-[112px] p-1.5 border-r border-b border-slate-100 text-left align-top transition-colors ${
-                        isCurrentMonth
-                          ? "bg-white hover:bg-blue-50/50"
-                          : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                      } ${isSelected ? "ring-2 ring-inset ring-blue-500" : ""} cursor-pointer`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span
-                          className={`text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full ${
-                            isToday
-                              ? "bg-blue-600 text-white"
-                              : "text-slate-600"
-                          }`}
-                        >
-                          {cell.getDate()}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          {isCurrentMonth && (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openQuickCreateForDate(key);
-                              }}
-                              onDoubleClick={(event) => event.stopPropagation()}
-                              className="w-5 h-5 inline-flex items-center justify-center rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
-                              title="Tạo booking ngày này"
-                              aria-label={`Tạo booking ngày ${key}`}
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {events.length > 0 && (
-                            <span className="text-[10px] font-medium text-slate-400">
-                              {events.length}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        {events.slice(0, 3).map((booking) => (
-                          <div
-                            key={booking.id}
-                            className={`px-2 py-1 rounded text-[10px] text-white truncate ${STATUS_EVENT[booking.status]}`}
-                            title={`${timeOnly(booking.startTime)} ${booking.customerName} - ${booking.service.name}`}
-                          >
-                            {timeOnly(booking.startTime)} {booking.customerName}
-                          </div>
-                        ))}
-                        {events.length > 3 && (
-                          <div className="text-[10px] text-slate-500 font-medium">
-                            +{events.length - 3} lịch khác
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 sticky top-20">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock3 className="w-4 h-4 text-slate-400" />
-            <p className="text-sm font-semibold text-slate-700 capitalize">
-              {dayTitle(selectedDate)}
-            </p>
-          </div>
-
-          <div className="mb-4 border border-slate-200 rounded-lg p-3 bg-slate-50/70">
+            </div>
             <button
               type="button"
-              onClick={() => {
-                setQuickBookingForm((prev) => ({
-                  ...prev,
-                  date: selectedDate,
-                }));
-                setIsQuickCreateOpen((prev) => !prev);
-              }}
-              className="w-full flex items-center justify-between text-xs font-semibold text-slate-700"
+              onClick={() => setIsQuickCreateOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <span>Tạo booking cho ngày đã chọn</span>
-              <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-blue-600 text-white">
-                <Plus className="w-3.5 h-3.5" />
-              </span>
+              <Plus className="w-3.5 h-3.5" />
+              Tạo booking
             </button>
-
-            {isQuickCreateOpen && (
-              <form
-                onSubmit={handleQuickBookingSubmit}
-                className="mt-3 space-y-2.5"
-              >
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                    Ngày
-                  </label>
-                  <input
-                    type="date"
-                    value={quickBookingForm.date}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setQuickBookingForm((prev) => ({ ...prev, date: value }));
-                      setSelectedDate(value);
-                      setMonthCursor(value);
-                    }}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Giờ *
-                    </label>
-                    <input
-                      type="time"
-                      step={1800}
-                      value={quickBookingForm.time}
-                      onChange={(event) =>
-                        setQuickBookingForm((prev) => ({
-                          ...prev,
-                          time: event.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Dịch vụ *
-                    </label>
-                    <select
-                      value={quickBookingForm.serviceId}
-                      onChange={(event) =>
-                        setQuickBookingForm((prev) => ({
-                          ...prev,
-                          serviceId: event.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                    >
-                      {servicesQuery.isLoading && <option>Đang tải...</option>}
-                      {!servicesQuery.isLoading &&
-                        availableServices.length === 0 && (
-                          <option value="">Không có dịch vụ</option>
-                        )}
-                      {availableServices.map((service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                    Khách hàng *
-                  </label>
-                  <input
-                    value={quickBookingForm.customerName}
-                    onChange={(event) =>
-                      setQuickBookingForm((prev) => ({
-                        ...prev,
-                        customerName: event.target.value,
-                      }))
-                    }
-                    placeholder="Nguyễn Văn A"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      SĐT *
-                    </label>
-                    <input
-                      value={quickBookingForm.customerPhone}
-                      onChange={(event) =>
-                        setQuickBookingForm((prev) => ({
-                          ...prev,
-                          customerPhone: event.target.value,
-                        }))
-                      }
-                      placeholder="0901234567"
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={quickBookingForm.customerEmail}
-                      onChange={(event) =>
-                        setQuickBookingForm((prev) => ({
-                          ...prev,
-                          customerEmail: event.target.value,
-                        }))
-                      }
-                      placeholder="khach@example.com"
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                    Ghi chú
-                  </label>
-                  <input
-                    value={quickBookingForm.notes}
-                    onChange={(event) =>
-                      setQuickBookingForm((prev) => ({
-                        ...prev,
-                        notes: event.target.value,
-                      }))
-                    }
-                    placeholder="Ghi chú thêm (nếu có)"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={
-                    createBooking.isPending ||
-                    !quickFormReady ||
-                    servicesQuery.isLoading ||
-                    availableServices.length === 0
-                  }
-                  className="w-full px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {createBooking.isPending
-                    ? "Đang tạo..."
-                    : "Xác nhận tạo booking"}
-                </button>
-              </form>
-            )}
           </div>
 
-          {dayQuery.isLoading ? (
-            <div className="h-[220px] flex items-center justify-center gap-2 text-slate-400 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Đang tải booking trong ngày...
-            </div>
-          ) : selectedDayBookings.length === 0 ? (
-            <div className="h-[220px] flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-              <CalendarDays className="w-6 h-6" />
-              <p>Không có booking trong ngày này</p>
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-[680px] overflow-y-auto pr-1">
-              <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
-                <div
-                  className="grid border-b border-slate-200"
-                  style={{ gridTemplateColumns: timelineColumnTemplate }}
-                >
-                  <div className="px-2 py-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border-r border-slate-200">
-                    Giờ
-                  </div>
-                  {dayBookingColumns.map((column, index) => (
-                    <div
-                      key={`${column.label}-header-${index}`}
-                      className="px-2 py-2 text-[11px] font-semibold text-slate-700 bg-slate-50 border-r border-slate-200 last:border-r-0"
-                    >
-                      <p>{column.label}</p>
-                    </div>
-                  ))}
+          <div>
+            {/* Timeline */}
+            <div>
+              {dayQuery.isLoading ? (
+                <div className="h-[220px] flex items-center justify-center gap-2 text-slate-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang tải booking trong ngày...
                 </div>
-
-                <div className="relative">
+              ) : selectedDayBookings.length === 0 ? (
+                <div className="h-[220px] flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
+                  <CalendarDays className="w-6 h-6" />
+                  <p>Không có booking trong ngày này</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
                   <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: timelineColumnTemplate,
-                      gridTemplateRows: timelineRowTemplate,
-                    }}
+                    className="grid border-b border-slate-200"
+                    style={{ gridTemplateColumns: timelineColumnTemplate }}
                   >
-                    {dayTimeSlots.map((slot) => (
-                      <Fragment key={`slot-${slot.index}`}>
-                        <div
-                          className={`px-1.5 text-[10px] border-r border-b border-slate-200 ${
-                            slot.bandIndex % 2 === 0 ? "bg-rose-50" : "bg-white"
-                          } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
-                        >
-                          <div className="h-full grid grid-cols-[38px_1fr] items-start pt-0.5">
-                            <div className="flex flex-col items-center justify-start">
-                              {slot.isHourStart && (
-                                <>
-                                  <span className="w-6 h-6 inline-flex items-center justify-center rounded-full border border-slate-700 text-[12px] font-bold text-slate-800 leading-none bg-white/90">
-                                    {slot.hour12}
-                                  </span>
-                                  <span className="mt-0.5 text-[8px] font-semibold text-slate-600 tracking-wide leading-none">
-                                    {slot.periodLabel}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="text-[10px] font-semibold text-slate-600 leading-none pt-0.5">
-                              {slot.minuteLabel}
-                            </div>
-                          </div>
-                        </div>
-
-                        {dayBookingColumns.map((_, laneIndex) => (
-                          <div
-                            key={`slot-${slot.index}-lane-${laneIndex}`}
-                            className={`border-r border-b border-slate-200 last:border-r-0 ${
-                              slot.bandIndex % 2 === 0
-                                ? "bg-rose-50/65"
-                                : "bg-white"
-                            } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
-                          />
-                        ))}
-                      </Fragment>
+                    <div className="px-2 py-2 text-[11px] font-semibold text-slate-500 bg-slate-50 border-r border-slate-200">
+                      Giờ
+                    </div>
+                    {dayBookingColumns.map((column, index) => (
+                      <div
+                        key={`dv-${column.label}-header-${index}`}
+                        className="px-2 py-2 text-[11px] font-semibold text-slate-700 bg-slate-50 border-r border-slate-200 last:border-r-0"
+                      >
+                        <p>{column.label}</p>
+                      </div>
                     ))}
                   </div>
 
-                  <div
-                    className="pointer-events-none absolute inset-0 grid p-1"
-                    style={{
-                      gridTemplateColumns: timelineColumnTemplate,
-                      gridTemplateRows: timelineRowTemplate,
-                    }}
-                  >
-                    {bookingPlacements.map((placement) => {
-                      const booking = placement.booking;
-                      const transitions = TRANSITIONS[booking.status] ?? [];
-                      const showDetails = placement.rowSpan >= 3;
-                      const showActions =
-                        transitions.length > 0 && placement.rowSpan >= 2;
-
-                      return (
-                        <div
-                          key={booking.id}
-                          className={`pointer-events-auto rounded-md border shadow-sm px-1.5 py-1 overflow-hidden min-h-[56px] ${STATUS_CARD[booking.status]}`}
-                          style={{
-                            gridColumn: placement.laneIndex + 2,
-                            gridRow: `${placement.rowStart} / span ${placement.rowSpan}`,
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold text-slate-800 truncate">
-                                {booking.customerName}
-                              </p>
-                              <p className="text-[10px] text-slate-500 truncate">
-                                {timeOnly(booking.startTime)} -{" "}
-                                {timeOnly(booking.endTime)}
-                              </p>
+                  <div className="relative">
+                    <div
+                      className="grid"
+                      style={{
+                        gridTemplateColumns: timelineColumnTemplate,
+                        gridTemplateRows: timelineRowTemplate,
+                      }}
+                    >
+                      {dayTimeSlots.map((slot) => (
+                        <Fragment key={`dv-slot-${slot.index}`}>
+                          <div
+                            className={`px-1.5 text-[10px] border-r border-b border-slate-200 ${
+                              slot.bandIndex % 2 === 0
+                                ? "bg-rose-50"
+                                : "bg-white"
+                            } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
+                          >
+                            <div className="h-full grid grid-cols-[38px_1fr] items-start pt-0.5">
+                              <div className="flex flex-col items-center justify-start">
+                                {slot.isHourStart && (
+                                  <>
+                                    <span className="w-6 h-6 inline-flex items-center justify-center rounded-full border border-slate-700 text-[12px] font-bold text-slate-800 leading-none bg-white/90">
+                                      {slot.hour12}
+                                    </span>
+                                    <span className="mt-0.5 text-[8px] font-semibold text-slate-600 tracking-wide leading-none">
+                                      {slot.periodLabel}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              <div className="text-[10px] font-semibold text-slate-600 leading-none pt-0.5">
+                                {slot.minuteLabel}
+                              </div>
                             </div>
-                            <span
-                              className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap ${STATUS_BADGE[booking.status]}`}
-                            >
-                              {STATUS_LABEL[booking.status]}
-                            </span>
                           </div>
+                          {dayBookingColumns.map((_, laneIndex) => (
+                            <div
+                              key={`dv-slot-${slot.index}-lane-${laneIndex}`}
+                              className={`border-r border-b border-slate-200 last:border-r-0 ${
+                                slot.bandIndex % 2 === 0
+                                  ? "bg-rose-50/65"
+                                  : "bg-white"
+                              } ${slot.isHourStart ? "border-t border-slate-300" : ""}`}
+                            />
+                          ))}
+                        </Fragment>
+                      ))}
+                    </div>
 
-                          {showDetails && (
-                            <div className="mt-1 text-[10px] text-slate-600 space-y-0.5">
-                              <p className="truncate">{booking.service.name}</p>
-                              <p className="truncate">
-                                {booking.customerPhone}
-                              </p>
+                    <div
+                      className="pointer-events-none absolute inset-0 grid p-1"
+                      style={{
+                        gridTemplateColumns: timelineColumnTemplate,
+                        gridTemplateRows: timelineRowTemplate,
+                      }}
+                    >
+                      {bookingPlacements.map((placement) => {
+                        const booking = placement.booking;
+                        const isSelectedBooking =
+                          selectedBookingId === booking.id;
+                        return (
+                          <div
+                            key={`dv-${booking.id}`}
+                            onClick={() => {
+                              setSelectedBookingId(booking.id);
+                              setView("detail");
+                            }}
+                            className={`pointer-events-auto cursor-pointer rounded-md border shadow-sm px-1.5 py-1 overflow-hidden min-h-[56px] ${STATUS_CARD[booking.status]} ${
+                              isSelectedBooking ? "ring-2 ring-slate-600" : ""
+                            }`}
+                            style={{
+                              gridColumn: placement.laneIndex + 2,
+                              gridRow: `${placement.rowStart} / span ${placement.rowSpan}`,
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-semibold text-slate-800 truncate">
+                                  {booking.customerName}
+                                </p>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  {booking.service?.name ??
+                                    booking.items
+                                      ?.map((i) => i.service?.name)
+                                      .filter(Boolean)
+                                      .join(", ") ??
+                                    ""}
+                                </p>
+                              </div>
+                              <span
+                                className={`w-4 h-4 inline-flex items-center justify-center rounded-full text-[10px] font-bold whitespace-nowrap ${STATUS_BADGE[booking.status]}`}
+                              >
+                                *
+                              </span>
                             </div>
-                          )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                          {showActions && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {transitions.map((next) => (
-                                <button
-                                  key={next}
-                                  onClick={() =>
-                                    updateStatus.mutate({
-                                      id: booking.id,
-                                      status: next,
-                                    })
-                                  }
-                                  disabled={updateStatus.isPending}
-                                  className={`px-1 py-0.5 rounded text-[9px] font-medium border transition-colors disabled:opacity-50 ${STATUS_BADGE[next]}`}
-                                >
-                                  {next === "CONFIRMED" && (
-                                    <CheckCircle2 className="inline w-2.5 h-2.5 mr-0.5" />
-                                  )}
-                                  {next === "COMPLETED" && (
-                                    <CheckCircle2 className="inline w-2.5 h-2.5 mr-0.5" />
-                                  )}
-                                  {next === "NO_SHOW" && (
-                                    <AlertCircle className="inline w-2.5 h-2.5 mr-0.5" />
-                                  )}
-                                  {next === "CANCELLED" && (
-                                    <Ban className="inline w-2.5 h-2.5 mr-0.5" />
-                                  )}
-                                  {STATUS_LABEL[next]}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div
+                    className="grid"
+                    style={{ gridTemplateColumns: timelineColumnTemplate }}
+                  >
+                    <div className="px-2 py-1.5 text-[10px] text-slate-500 border-r border-slate-200 bg-slate-50">
+                      {formatMinutesLabel(WORK_END_MINUTES)}
+                    </div>
+                    {dayBookingColumns.map((_, index) => (
+                      <div
+                        key={`dv-footer-${index}`}
+                        className="border-r border-slate-200 last:border-r-0 bg-slate-50"
+                      />
+                    ))}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {view === "detail" && (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
+          {/* Detail view header */}
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100">
+            <button
+              onClick={() => setView("day")}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Quay lại lịch ngày
+            </button>
+            <div className="flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-slate-400" />
+              <p className="text-sm font-semibold text-slate-700 capitalize">
+                {dayTitle(selectedDate)}
+              </p>
+            </div>
+          </div>
 
-                <div
-                  className="grid"
-                  style={{ gridTemplateColumns: timelineColumnTemplate }}
+          {selectedBooking ? (
+            <div className="p-6 max-w-2xl mx-auto space-y-5">
+              {/* Name + status */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    {selectedBooking.customerName}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Tạo lúc{" "}
+                    {new Date(selectedBooking.createdAt).toLocaleString(
+                      "vi-VN",
+                    )}
+                  </p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE[selectedBooking.status]}`}
                 >
-                  <div className="px-2 py-1.5 text-[10px] text-slate-500 border-r border-slate-200 bg-slate-50">
-                    {formatMinutesLabel(WORK_END_MINUTES)}
-                  </div>
-                  {dayBookingColumns.map((_, index) => (
-                    <div
-                      key={`footer-${index}`}
-                      className="border-r border-slate-200 last:border-r-0 bg-slate-50"
-                    />
-                  ))}
+                  {STATUS_LABEL[selectedBooking.status]}
+                </span>
+              </div>
+
+              {/* Services */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  Dịch vụ
+                </p>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 divide-y divide-slate-200">
+                  {selectedBooking.items && selectedBooking.items.length > 0 ? (
+                    selectedBooking.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-3 p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-700">
+                            {item.service?.name ?? "—"}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {timeOnly(item.startTime)} –{" "}
+                            {timeOnly(item.endTime)}
+                            {item.staff?.name ? ` · ${item.staff.name}` : ""}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700 whitespace-nowrap">
+                          £{Number(item.price).toFixed(2)}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-sm text-slate-600">
+                      {selectedBooking.service?.name ?? "—"}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Pricing */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  Thanh toán
+                </p>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1.5">
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Tổng dịch vụ</span>
+                    <span>
+                      £{Number(selectedBooking.totalPrice).toFixed(2)}
+                    </span>
+                  </div>
+                  {selectedBooking.discountAmount &&
+                    Number(selectedBooking.discountAmount) > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Giảm giá</span>
+                        <span>
+                          -£{Number(selectedBooking.discountAmount).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  <div className="flex justify-between text-base font-bold text-slate-800 border-t border-slate-200 pt-2 mt-1">
+                    <span>Thanh toán</span>
+                    <span>
+                      £
+                      {Number(
+                        selectedBooking.finalPrice ??
+                          selectedBooking.totalPrice,
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                  Thông tin khách
+                </p>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                    {selectedBooking.customerPhone}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                    {selectedBooking.customerEmail ?? "—"}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <User className="w-4 h-4 text-slate-400 shrink-0" />
+                    {selectedBooking.user?.name
+                      ? `${selectedBooking.user.name} (${selectedBooking.user.email})`
+                      : "Khách vãng lai"}
+                  </div>
+                  {selectedBooking.notes && (
+                    <div className="flex items-start gap-2 text-sm text-slate-700">
+                      <StickyNote className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <span>{selectedBooking.notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Design image */}
+              {selectedBooking.designImage && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                    Ảnh thiết kế
+                  </p>
+                  <a
+                    href={selectedBooking.designImage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={selectedBooking.designImage}
+                      alt="Design"
+                      className="max-h-80 w-auto rounded-lg border border-slate-200 bg-slate-50 hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                </div>
+              )}
+
+              {/* Status actions */}
+              {(TRANSITIONS[selectedBooking.status] ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+                  {(TRANSITIONS[selectedBooking.status] ?? []).map((next) => (
+                    <button
+                      key={`det-${selectedBooking.id}-${next}`}
+                      onClick={() =>
+                        updateStatus.mutate({
+                          id: selectedBooking.id,
+                          status: next,
+                        })
+                      }
+                      disabled={updateStatus.isPending}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${STATUS_BADGE[next]}`}
+                    >
+                      {next === "CONFIRMED" && (
+                        <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />
+                      )}
+                      {next === "COMPLETED" && (
+                        <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />
+                      )}
+                      {next === "NO_SHOW" && (
+                        <AlertCircle className="inline w-3.5 h-3.5 mr-1" />
+                      )}
+                      {next === "CANCELLED" && (
+                        <Ban className="inline w-3.5 h-3.5 mr-1" />
+                      )}
+                      {STATUS_LABEL[next]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-10 text-center text-slate-400 text-sm">
+              Không tìm thấy booking.
             </div>
           )}
         </div>
-      </div>
+      )}
+      {view === "calendar" && (
+        <div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            {monthQuery.isLoading ? (
+              <div className="flex items-center justify-center py-24 gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                <span className="text-sm text-slate-400">
+                  Đang tải lịch đặt…
+                </span>
+              </div>
+            ) : monthQuery.isError ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <XCircle className="w-8 h-8 text-red-300" />
+                <p className="text-sm text-slate-500">
+                  Không thể tải dữ liệu. Kiểm tra kết nối backend.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-7 border-b border-slate-200">
+                  {WEEK_DAYS.map((day) => (
+                    <div
+                      key={day}
+                      className="py-2 text-center text-[11px] font-semibold tracking-wider text-white bg-blue-600 border-r border-blue-500 last:border-r-0"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
 
+                <div className="grid grid-cols-7">
+                  {gridCells.map((cell) => {
+                    const key = dayKey(cell);
+                    const events = monthEventsMap.get(key) ?? [];
+                    const isCurrentMonth = cell.getMonth() === currentMonth;
+                    const isSelected = key === selectedDate;
+                    const isToday = key === toDateInputValue(new Date());
+
+                    return (
+                      <div
+                        key={key}
+                        onClick={() => openDayView(key)}
+                        onDoubleClick={() => openDayDetailModal(key)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelectedDate(key);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className={`min-h-[112px] p-1.5 border-r border-b border-slate-100 text-left align-top transition-colors ${
+                          isCurrentMonth
+                            ? "bg-white hover:bg-blue-50/50"
+                            : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                        } ${isSelected ? "ring-2 ring-inset ring-blue-500" : ""} cursor-pointer`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full ${
+                              isToday
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-600"
+                            }`}
+                          >
+                            {cell.getDate()}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {isCurrentMonth && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openQuickCreateForDate(key);
+                                }}
+                                onDoubleClick={(event) =>
+                                  event.stopPropagation()
+                                }
+                                className="w-5 h-5 inline-flex items-center justify-center rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+                                title="Tạo booking ngày này"
+                                aria-label={`Tạo booking ngày ${key}`}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {events.length > 0 && (
+                              <span className="text-[10px] font-medium text-slate-400">
+                                {events.length}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          {events.slice(0, 3).map((booking) => (
+                            <div
+                              key={booking.id}
+                              className={`px-2 py-1 rounded text-[10px] text-white truncate ${STATUS_EVENT[booking.status]}`}
+                              title={`${timeOnly(booking.startTime)} ${booking.customerName} - ${
+                                booking.service?.name ??
+                                booking.items
+                                  ?.map((i) => i.service?.name)
+                                  .filter(Boolean)
+                                  .join(", ") ??
+                                ""
+                              }`}
+                            >
+                              {timeOnly(booking.startTime)}{" "}
+                              {booking.customerName}
+                            </div>
+                          ))}
+                          {events.length > 3 && (
+                            <div className="text-[10px] text-slate-500 font-medium">
+                              +{events.length - 3} lịch khác
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}{" "}
+      {/* end view === "calendar" */}
       <Dialog
         open={isDayDetailModalOpen}
         onOpenChange={setIsDayDetailModalOpen}
@@ -1120,15 +1178,19 @@ const AdminBookings = () => {
                     return (
                       <div
                         key={`modal-${booking.id}`}
-                        className={`rounded-lg border p-3 space-y-2 ${STATUS_CARD[booking.status]}`}
+                        className={`rounded-lg border p-3 space-y-2.5 ${STATUS_CARD[booking.status]}`}
                       >
+                        {/* Header */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-slate-800">
                               {booking.customerName}
                             </p>
-                            <p className="text-xs text-slate-500">
-                              {booking.service.name}
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Tạo lúc{" "}
+                              {new Date(booking.createdAt).toLocaleString(
+                                "vi-VN",
+                              )}
                             </p>
                           </div>
                           <span
@@ -1138,20 +1200,71 @@ const AdminBookings = () => {
                           </span>
                         </div>
 
+                        {/* Services list */}
+                        <div className="rounded-md bg-white/70 border border-slate-200 p-2 space-y-1.5">
+                          {booking.items && booking.items.length > 0 ? (
+                            booking.items.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between gap-2 text-xs"
+                              >
+                                <div className="min-w-0">
+                                  <p className="font-medium text-slate-700 truncate">
+                                    {item.service?.name ?? "—"}
+                                  </p>
+                                  <p className="text-slate-400">
+                                    {timeOnly(item.startTime)} –{" "}
+                                    {timeOnly(item.endTime)}
+                                    {item.staff?.name
+                                      ? ` · ${item.staff.name}`
+                                      : ""}
+                                  </p>
+                                </div>
+                                <p className="text-slate-600 font-medium whitespace-nowrap">
+                                  £{Number(item.price).toFixed(2)}
+                                </p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-600">
+                              {booking.service?.name ?? "—"}
+                              {booking.staff?.name
+                                ? ` · ${booking.staff.name}`
+                                : ""}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Pricing */}
+                        <div className="text-xs space-y-0.5">
+                          <div className="flex justify-between text-slate-500">
+                            <span>Tổng dịch vụ</span>
+                            <span>
+                              £{Number(booking.totalPrice).toFixed(2)}
+                            </span>
+                          </div>
+                          {booking.discountAmount &&
+                            Number(booking.discountAmount) > 0 && (
+                              <div className="flex justify-between text-green-600">
+                                <span>Giảm giá</span>
+                                <span>
+                                  -£{Number(booking.discountAmount).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                          <div className="flex justify-between font-semibold text-slate-800 border-t border-slate-200 pt-1 mt-1">
+                            <span>Thanh toán</span>
+                            <span>
+                              £
+                              {Number(
+                                booking.finalPrice ?? booking.totalPrice,
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Contact */}
                         <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600">
-                          <p>
-                            <span className="font-medium text-slate-700">
-                              Giờ:
-                            </span>{" "}
-                            {timeOnly(booking.startTime)} -{" "}
-                            {timeOnly(booking.endTime)}
-                          </p>
-                          <p>
-                            <span className="font-medium text-slate-700">
-                              Thợ:
-                            </span>{" "}
-                            {booking.staff?.name ?? "Chưa phân công"}
-                          </p>
                           <p>
                             <span className="font-medium text-slate-700">
                               SĐT:
@@ -1162,7 +1275,20 @@ const AdminBookings = () => {
                             <span className="font-medium text-slate-700">
                               Email:
                             </span>{" "}
-                            {booking.customerEmail ?? "-"}
+                            {booking.customerEmail ?? "—"}
+                          </p>
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              Tài khoản:
+                            </span>{" "}
+                            {booking.user?.name ?? "Khách vãng lai"}
+                          </p>
+                          <p>
+                            <span className="font-medium text-slate-700">
+                              Giờ:
+                            </span>{" "}
+                            {timeOnly(booking.startTime)} –{" "}
+                            {timeOnly(booking.endTime)}
                           </p>
                         </div>
 
@@ -1175,6 +1301,27 @@ const AdminBookings = () => {
                           </p>
                         )}
 
+                        {/* Design image */}
+                        {booking.designImage && (
+                          <div>
+                            <p className="text-[11px] font-medium text-slate-500 mb-1">
+                              Ảnh thiết kế
+                            </p>
+                            <a
+                              href={booking.designImage}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={booking.designImage}
+                                alt="Design"
+                                className="w-full max-h-48 object-contain rounded-md border border-slate-200 bg-white hover:opacity-90 transition-opacity"
+                              />
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Status actions */}
                         {transitions.length > 0 && (
                           <div className="pt-1 border-t border-slate-200/80 flex flex-wrap gap-1.5">
                             {transitions.map((next) => (
@@ -1212,6 +1359,164 @@ const AdminBookings = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Quick Create Dialog */}
+      <Dialog open={isQuickCreateOpen} onOpenChange={setIsQuickCreateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base text-slate-800">
+              Tạo booking mới
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Tạo booking cho{" "}
+              <span className="capitalize">{dayTitle(selectedDate)}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleQuickBookingSubmit} className="mt-1 space-y-3">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Ngày
+              </label>
+              <input
+                type="date"
+                value={quickBookingForm.date}
+                onChange={(e) => {
+                  setQuickBookingForm((prev) => ({
+                    ...prev,
+                    date: e.target.value,
+                  }));
+                  setSelectedDate(e.target.value);
+                  setMonthCursor(e.target.value);
+                }}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Giờ *
+                </label>
+                <input
+                  type="time"
+                  step={1800}
+                  value={quickBookingForm.time}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      time: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Dịch vụ *
+                </label>
+                <select
+                  value={quickBookingForm.serviceId}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      serviceId: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                >
+                  {servicesQuery.isLoading && <option>Đang tải...</option>}
+                  {!servicesQuery.isLoading &&
+                    availableServices.length === 0 && (
+                      <option value="">Không có dịch vụ</option>
+                    )}
+                  {availableServices.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Khách hàng *
+              </label>
+              <input
+                value={quickBookingForm.customerName}
+                onChange={(e) =>
+                  setQuickBookingForm((prev) => ({
+                    ...prev,
+                    customerName: e.target.value,
+                  }))
+                }
+                placeholder="Nguyễn Văn A"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  SĐT *
+                </label>
+                <input
+                  value={quickBookingForm.customerPhone}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      customerPhone: e.target.value,
+                    }))
+                  }
+                  placeholder="0901234567"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={quickBookingForm.customerEmail}
+                  onChange={(e) =>
+                    setQuickBookingForm((prev) => ({
+                      ...prev,
+                      customerEmail: e.target.value,
+                    }))
+                  }
+                  placeholder="khach@example.com"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Ghi chú
+              </label>
+              <input
+                value={quickBookingForm.notes}
+                onChange={(e) =>
+                  setQuickBookingForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
+                placeholder="Ghi chú thêm (nếu có)"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={
+                createBooking.isPending ||
+                !quickFormReady ||
+                servicesQuery.isLoading ||
+                availableServices.length === 0
+              }
+              className="w-full px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {createBooking.isPending ? "Đang tạo..." : "Xác nhận tạo booking"}
+            </button>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

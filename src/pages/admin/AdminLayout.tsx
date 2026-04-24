@@ -205,7 +205,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page */}
-        <main className="flex-1 p-5 md:p-7">
+        <main className="grow p-5 md:p-7">
           <Outlet />
         </main>
 

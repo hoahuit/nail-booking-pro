@@ -1,38 +1,54 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, Users, TrendingUp, ArrowRight, Loader2, RefreshCw, DollarSign } from "lucide-react";
+import {
+  CalendarDays,
+  Users,
+  TrendingUp,
+  ArrowRight,
+  Loader2,
+  RefreshCw,
+  DollarSign,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useAdminBookings } from "@/hooks/useAdminBookings";
 import type { ApiBooking } from "@/lib/adminTypes";
 
 const STATUS_LABEL: Record<string, string> = {
-  PENDING:   "Chờ xác nhận",
+  PENDING: "Chờ xác nhận",
   CONFIRMED: "Đã xác nhận",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
-  NO_SHOW:   "Vắng mặt",
+  NO_SHOW: "Vắng mặt",
 };
 
 const statusColors: Record<string, string> = {
-  PENDING:   "bg-amber-50 text-amber-600 border border-amber-200",
+  PENDING: "bg-amber-50 text-amber-600 border border-amber-200",
   CONFIRMED: "bg-blue-50 text-blue-600 border border-blue-200",
   COMPLETED: "bg-emerald-50 text-emerald-600 border border-emerald-200",
   CANCELLED: "bg-red-50 text-red-500 border border-red-200",
-  NO_SHOW:   "bg-slate-100 text-slate-500 border border-slate-200",
+  NO_SHOW: "bg-slate-100 text-slate-500 border border-slate-200",
 };
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const today    = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
   // Fetch today's bookings + all PENDING for counts
-  const { data: todayData, isLoading, refetch, isFetching } = useAdminBookings({ date: today, limit: 20 });
-  const { data: pendingData } = useAdminBookings({ status: "PENDING", limit: 1 });
-  const { data: allData }     = useAdminBookings({ limit: 1 }); // just for total
+  const {
+    data: todayData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useAdminBookings({ date: today, limit: 20 });
+  const { data: pendingData } = useAdminBookings({
+    status: "PENDING",
+    limit: 1,
+  });
+  const { data: allData } = useAdminBookings({ limit: 1 }); // just for total
 
   const todayBookings = todayData?.data ?? [];
-  const pendingCount  = pendingData?.meta?.total ?? 0;
-  const totalCount    = allData?.meta?.total ?? 0;
+  const pendingCount = pendingData?.meta?.total ?? 0;
+  const totalCount = allData?.meta?.total ?? 0;
 
   const stats = useMemo(() => {
     const revenue = todayBookings
@@ -42,7 +58,10 @@ const AdminDashboard = () => {
   }, [todayData, pendingCount]);
 
   const recent = [...todayBookings]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
     .slice(0, 7);
 
   const statCards = [
@@ -72,7 +91,8 @@ const AdminDashboard = () => {
     },
     {
       label: "Doanh thu hôm nay",
-      value: `$${stats.revenue.toFixed(0)}`,
+      value: `£${stats.revenue.toFixed(2)}`,
+
       sub: "đã hoàn thành",
       icon: CalendarDays,
       iconColor: "text-warm",
@@ -85,7 +105,9 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-serif text-3xl md:text-4xl text-foreground">Tổng quan</h1>
+          <h1 className="font-serif text-3xl md:text-4xl text-foreground">
+            Tổng quan
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground font-light">
             {new Date().toLocaleDateString("vi-VN", {
               weekday: "long",
@@ -101,7 +123,9 @@ const AdminDashboard = () => {
             disabled={isFetching}
             className="flex items-center gap-1.5 px-4 py-2.5 text-[10px] border border-border tracking-[0.12em] uppercase hover:bg-secondary/50 transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-3 h-3 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3 h-3 ${isFetching ? "animate-spin" : ""}`}
+            />
             Làm mới
           </button>
           <button
@@ -128,11 +152,15 @@ const AdminDashboard = () => {
               <p className="text-[10px] tracking-[0.14em] uppercase text-muted-foreground leading-tight max-w-[120px]">
                 {s.label}
               </p>
-              <div className={`w-9 h-9 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}>
+              <div
+                className={`w-9 h-9 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}
+              >
                 <s.icon className={`w-4 h-4 ${s.iconColor}`} />
               </div>
             </div>
-            <p className="font-serif text-4xl text-foreground leading-none">{s.value}</p>
+            <p className="font-serif text-4xl text-foreground leading-none">
+              {s.value}
+            </p>
             <p className="text-xs text-muted-foreground">{s.sub}</p>
           </motion.div>
         ))}
@@ -165,7 +193,14 @@ const AdminDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-secondary/40 border-b border-border">
-                  {["Khách hàng", "Điện thoại", "Dịch vụ", "Giờ bắt đầu", "Nhân viên", "Trạng thái"].map((h) => (
+                  {[
+                    "Khách hàng",
+                    "Điện thoại",
+                    "Dịch vụ",
+                    "Giờ bắt đầu",
+                    "Nhân viên",
+                    "Trạng thái",
+                  ].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-[10px] tracking-[0.14em] uppercase text-muted-foreground font-medium"
@@ -178,13 +213,19 @@ const AdminDashboard = () => {
               <tbody className="divide-y divide-border">
                 {recent.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground text-sm">
+                    <td
+                      colSpan={6}
+                      className="px-5 py-10 text-center text-muted-foreground text-sm"
+                    >
                       Không có lịch đặt hôm nay
                     </td>
                   </tr>
                 ) : (
                   recent.map((b: ApiBooking) => {
-                    const time = new Date(b.startTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+                    const time = new Date(b.startTime).toLocaleTimeString(
+                      "vi-VN",
+                      { hour: "2-digit", minute: "2-digit" },
+                    );
                     return (
                       <tr
                         key={b.id}
@@ -194,16 +235,29 @@ const AdminDashboard = () => {
                         <td className="px-5 py-4 font-medium text-foreground whitespace-nowrap">
                           {b.customerName}
                         </td>
-                        <td className="px-5 py-4 text-muted-foreground">{b.customerPhone}</td>
-                        <td className="px-5 py-4 text-muted-foreground max-w-[200px] truncate">
-                          {b.service.name}
-                        </td>
-                        <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">{time}</td>
                         <td className="px-5 py-4 text-muted-foreground">
-                          {b.staff?.name ?? <span className="italic">Bất kỳ</span>}
+                          {b.customerPhone}
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground max-w-[200px] truncate">
+                          {b.service?.name ??
+                            b.items
+                              ?.map((i) => i.service?.name)
+                              .filter(Boolean)
+                              .join(", ") ??
+                            "—"}
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                          {time}
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground">
+                          {b.staff?.name ?? (
+                            <span className="italic">Bất kỳ</span>
+                          )}
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium border ${statusColors[b.status]}`}>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-medium border ${statusColors[b.status]}`}
+                          >
                             {STATUS_LABEL[b.status]}
                           </span>
                         </td>

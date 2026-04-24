@@ -17,9 +17,10 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
   const [activeTab, setActiveTab] = useState(ALL_TAB);
 
   const allItems: ServiceItem[] = categories.flatMap((c) => c.items);
-  const activeCat = activeTab === ALL_TAB
-    ? { key: ALL_TAB, label: "All", items: allItems }
-    : (categories.find((c) => c.key === activeTab) ?? categories[0]);
+  const activeCat =
+    activeTab === ALL_TAB
+      ? { key: ALL_TAB, label: "All", items: allItems }
+      : (categories.find((c) => c.key === activeTab) ?? categories[0]);
 
   if (!activeCat) return null;
 
@@ -44,8 +45,12 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
           transition={{ duration: 0.7 }}
           className="text-center mb-20 space-y-5"
         >
-          <p className="text-xs tracking-[0.32em] uppercase text-muted-foreground">Service Menu</p>
-          <h2 className="font-serif text-5xl md:text-6xl text-foreground leading-none">Price List</h2>
+          <p className="text-xs tracking-[0.32em] uppercase text-muted-foreground">
+            Service Menu
+          </p>
+          <h2 className="font-serif text-5xl md:text-6xl text-foreground leading-none">
+            Price List
+          </h2>
           <p className="text-sm text-muted-foreground font-light max-w-md mx-auto">
             Premium nail care — from classic elegance to avant-garde artistry.
           </p>
@@ -60,7 +65,9 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
                 key={cat.key}
                 onClick={() => setActiveTab(cat.key)}
                 className={`relative whitespace-nowrap px-4 md:px-5 pb-4 pt-1 text-[10px] tracking-[0.12em] uppercase font-medium transition-colors duration-200 ${
-                  activeTab === cat.key ? "text-foreground" : "text-muted-foreground hover:text-foreground/75"
+                  activeTab === cat.key
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/75"
                 }`}
               >
                 {cat.label}
@@ -88,7 +95,12 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
             className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5"
           >
             {activeCat.items.map((item, idx) => (
-              <ServiceCard key={item.id} item={item} idx={idx} onBook={onBookingClick} />
+              <ServiceCard
+                key={item.id}
+                item={item}
+                idx={idx}
+                onBook={onBookingClick}
+              />
             ))}
           </motion.div>
         </AnimatePresence>
@@ -101,7 +113,9 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-20 text-center space-y-3"
         >
-          <p className="text-sm text-muted-foreground font-light">Can't find what you're looking for?</p>
+          <p className="text-sm text-muted-foreground font-light">
+            Can't find what you're looking for?
+          </p>
           <a
             href="tel:+447482888999"
             className="inline-block text-xs tracking-[0.2em] uppercase text-foreground border-b border-foreground pb-0.5 hover:text-primary hover:border-primary transition-colors"
@@ -115,6 +129,10 @@ const ServicesSection = ({ onBookingClick }: ServicesSectionProps) => {
 };
 
 /* ── Individual Service Card with 3D tilt ── */
+function priceDisplay(item: ServiceItem): string {
+  return item.priceMax ? `${item.price} – ${item.priceMax}` : item.price;
+}
+
 function ServiceCard({
   item,
   idx,
@@ -150,7 +168,9 @@ function ServiceCard({
           {isPopular && (
             <div className="absolute top-2 left-2 flex items-center gap-1 bg-foreground/85 text-primary-foreground px-2 py-1">
               <Sparkles className="w-2 h-2" />
-              <span className="text-[8px] tracking-[0.15em] uppercase">Popular</span>
+              <span className="text-[8px] tracking-[0.15em] uppercase">
+                Popular
+              </span>
             </div>
           )}
         </div>
@@ -159,7 +179,9 @@ function ServiceCard({
             {item.name}
           </h3>
           <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border">
-            <span className="font-serif text-xl text-foreground">{item.price}</span>
+            <span className="font-serif text-xl text-foreground">
+              {priceDisplay(item)}
+            </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -195,14 +217,20 @@ function ServiceCard({
           <h3 className="font-serif text-lg text-primary-foreground leading-tight line-clamp-2">
             {item.name}
           </h3>
-          <span className="font-serif text-2xl text-primary-foreground/90">{item.price}</span>
+          <span className="font-serif text-2xl text-primary-foreground/90">
+            {priceDisplay(item)}
+          </span>
         </div>
 
         {/* Hover panel */}
         <div className="absolute inset-x-0 bottom-0 bg-background/[0.97] backdrop-blur-[2px] p-5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
-          <h3 className="font-serif text-sm text-foreground leading-snug mb-3">{item.name}</h3>
+          <h3 className="font-serif text-sm text-foreground leading-snug mb-3">
+            {item.name}
+          </h3>
           <div className="flex items-center justify-between py-3 border-t border-b border-border">
-            <span className="font-serif text-2xl text-foreground">{item.price}</span>
+            <span className="font-serif text-2xl text-foreground">
+              {priceDisplay(item)}
+            </span>
             <span className="flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-muted-foreground">
               <Clock className="w-2.5 h-2.5" />
               {item.duration}
@@ -222,13 +250,17 @@ function ServiceCard({
         {isPopular && (
           <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-foreground/90 backdrop-blur-sm text-primary-foreground px-2.5 py-1.5">
             <Sparkles className="w-2.5 h-2.5" />
-            <span className="text-[9px] tracking-[0.2em] uppercase font-medium">Popular</span>
+            <span className="text-[9px] tracking-[0.2em] uppercase font-medium">
+              Popular
+            </span>
           </div>
         )}
 
         <div className="absolute top-3 right-3 z-20 bg-background/80 backdrop-blur-sm px-2 py-1 flex items-center gap-1.5 group-hover:opacity-0 transition-opacity duration-300">
           <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-          <span className="text-[10px] tracking-[0.08em] text-muted-foreground">{item.duration}</span>
+          <span className="text-[10px] tracking-[0.08em] text-muted-foreground">
+            {item.duration}
+          </span>
         </div>
 
         {/* 3D corner accents */}

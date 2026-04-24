@@ -33,6 +33,7 @@ const EMPTY: ServicePayload = {
   image: "",
   duration: 60,
   price: 0,
+  priceMax: null,
   category: "",
   isActive: true,
 };
@@ -53,6 +54,7 @@ function ServiceModal({
           image: initial.image ?? "",
           duration: initial.duration,
           price: parseFloat(initial.price),
+          priceMax: initial.priceMax ? parseFloat(initial.priceMax) : null,
           category: initial.category,
           isActive: initial.isActive,
         }
@@ -92,6 +94,10 @@ function ServiceModal({
       ...form,
       image: imageUrl || undefined,
       price: Number(form.price),
+      priceMax:
+        form.priceMax != null && !Number.isNaN(Number(form.priceMax))
+          ? Number(form.priceMax)
+          : null,
       duration: Number(form.duration),
     };
     if (isEdit && initial) {
@@ -162,10 +168,10 @@ function ServiceModal({
             </datalist>
           </div>
 
-          {/* Price + Duration */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Price + PriceMax + Duration */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Giá (£) *</label>
+              <label className={labelCls}>Giá từ (£) *</label>
               <input
                 type="number"
                 min={0}
@@ -174,6 +180,23 @@ function ServiceModal({
                 onChange={(e) => set("price", parseFloat(e.target.value))}
                 className={inputCls}
                 required
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Giá đến (£)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={form.priceMax ?? ""}
+                placeholder="Bỏ trống = giá cố định"
+                onChange={(e) =>
+                  set(
+                    "priceMax",
+                    e.target.value === "" ? null : parseFloat(e.target.value),
+                  )
+                }
+                className={inputCls}
               />
             </div>
             <div>
@@ -506,7 +529,13 @@ const AdminServices = () => {
                       </td>
 
                       <td className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">
-                        ${parseFloat(svc.price).toFixed(0)}
+                        £{parseFloat(svc.price).toFixed(2)}
+                        {svc.priceMax && (
+                          <span className="text-slate-400 font-normal">
+                            {" "}
+                            – £{parseFloat(svc.priceMax).toFixed(2)}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import type { BookingPayload, Booking } from "@/lib/types";
+import type { MultiServiceBookingPayload, Booking } from "@/lib/types";
 import { toast } from "sonner";
 
 let bookingApiWarmed = false;
@@ -89,55 +89,116 @@ export async function listPublicDayOffsApi(
   return Array.isArray(json.data) ? json.data : [];
 }
 
-async function createBookingApi(payload: BookingPayload): Promise<Booking> {
+// ── Duration helpers ──────────────────────────────────────────────────────────
 
-  const dateObj = new Date(payload.date);
-  const [hours, minutes] = payload.time.split(":").map(Number);
-  dateObj.setHours(hours, minutes, 0, 0);
+/** Parse "45m", "1h", "1h 30m", "1h30m" → total minutes */
+function parseDurationMinutes(duration: string): number {
+  const hourMatch = duration.match(/(\d+)\s*h/);
+  const minMatch = duration.match(/(\d+)\s*m/);
+  const hours = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+  const mins = minMatch ? parseInt(minMatch[1], 10) : 0;
+  return hours * 60 + mins;
+}
 
-  const body: Record<string, unknown> = {
-    serviceId: payload.service.id,
-    startTime: dateObj.toISOString(),
-    customerName: payload.customer.name,
-    customerPhone: payload.customer.phone,
-    customerEmail: payload.customer.email,
-  };
+/** Add minutes to a "HH:mm" string → "HH:mm" */
+function addMinutesToTime(timeStr: string, minutes: number): string {
+  const [h, m] = timeStr.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  const newH = Math.floor(total / 60) % 24;
+  const newM = total % 60;
+  return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`;
+}
 
-  if (payload.note) body.notes = payload.note;
-  if (payload.staffId && payload.staffId !== "any") body.staffId = payload.staffId;
-  if (payload.voucherCode?.trim()) body.voucherCode = payload.voucherCode.trim().toUpperCase();
+async function createBookingApi(
+  payload: MultiServiceBookingPayload,
+): Promise<Booking> {
+  // Build sequential start times for each service entry
+  let currentTime = payload.time;
+  const servicesBody = payload.services.map((entry) => {
+    const dateObj = new Date(payload.date);
+    const [hours, minutes] = currentTime.split(":").map(Number);
+    dateObj.setHours(hours, minutes, 0, 0);
+    const startTime = dateObj.toISOString();
 
-  const res = await fetch("/api/v1/bookings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    currentTime = addMinutesToTime(
+      currentTime,
+      parseDurationMinutes(entry.service.duration),
+    );
+
+    return {
+      serviceId: entry.service.id,
+      startTime,
+      ...(entry.staffId !== "any" ? { staffId: entry.staffId } : {}),
+    };
   });
 
-  if (res.status === 409) {
-    throw new Error("This time slot is already booked. Please choose a different time.");
+  let res: Response;
+
+  if (payload.designImage) {
+    // multipart/form-data when design image is attached
+    const formData = new FormData();
+    formData.append("services", JSON.stringify(servicesBody));
+    formData.append("customerName", payload.customer.name);
+    formData.append("customerPhone", payload.customer.phone);
+    if (payload.customer.email) {
+      formData.append("customerEmail", payload.customer.email);
+    }
+    if (payload.note) formData.append("notes", payload.note);
+    if (payload.voucherCode?.trim()) {
+      formData.append(
+        "voucherCode",
+        payload.voucherCode.trim().toUpperCase(),
+      );
+    }
+    formData.append("designImage", payload.designImage);
+
+    res = await fetch("/api/v1/bookings", { method: "POST", body: formData });
+  } else {
+    const body: Record<string, unknown> = {
+      services: servicesBody,
+      customerName: payload.customer.name,
+      customerPhone: payload.customer.phone,
+    };
+    if (payload.customer.email) body.customerEmail = payload.customer.email;
+    if (payload.note) body.notes = payload.note;
+    if (payload.voucherCode?.trim()) {
+      body.voucherCode = payload.voucherCode.trim().toUpperCase();
+    }
+
+    res = await fetch("/api/v1/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
   }
 
+  if (res.status === 409) {
+    throw new Error(
+      "This time slot is already booked. Please choose a different time.",
+    );
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Booking failed (${res.status})`);
+    throw new Error(
+      (err as { message?: string }).message || `Booking failed (${res.status})`,
+    );
   }
 
   const json = await res.json();
-  const data = json.data ?? json;
+  const data = (json.data ?? json) as Record<string, unknown>;
   return {
-    ...payload,
-    id: data.id ?? crypto.randomUUID(),
-    status: data.status ?? "pending",
-    createdAt: data.createdAt ?? new Date().toISOString(),
-    totalPrice: data.totalPrice,
-    discountAmount: data.discountAmount,
-    finalPrice: data.finalPrice,
-    voucherId: data.voucherId,
+    id: (data.id as string | undefined) ?? crypto.randomUUID(),
+    status: (data.status as Booking["status"] | undefined) ?? "pending",
+    createdAt: (data.createdAt as string | undefined) ?? new Date().toISOString(),
+    totalPrice: data.totalPrice as number | undefined,
+    discountAmount: data.discountAmount as number | undefined,
+    finalPrice: data.finalPrice as number | undefined,
+    voucherId: data.voucherId as string | undefined,
   };
 }
 
 export function useCreateBooking() {
-  return useMutation<Booking, Error, BookingPayload>({
+  return useMutation<Booking, Error, MultiServiceBookingPayload>({
     mutationFn: createBookingApi,
     onSuccess: () => {
       toast.success("Appointment booked successfully!");
