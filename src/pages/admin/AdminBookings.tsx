@@ -250,8 +250,12 @@ const AdminBookings = () => {
     NO_SHOW: noShowCountQuery.data?.meta?.total ?? 0,
   };
 
-  const monthBookings = monthQuery.data?.data ?? [];
-  const selectedDayBookings = dayQuery.data?.data ?? [];
+  const monthBookings = (monthQuery.data?.data ?? []).filter(
+    (b) => b.status !== "CANCELLED",
+  );
+  const selectedDayBookings = (dayQuery.data?.data ?? []).filter(
+    (b) => b.status !== "CANCELLED",
+  );
   const availableServices = servicesQuery.data?.data ?? [];
 
   useEffect(() => {
