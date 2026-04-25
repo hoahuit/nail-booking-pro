@@ -21,7 +21,7 @@ interface ApiResponse {
 }
 
 async function fetchServices(): Promise<ServiceCategory[]> {
-  const res = await fetch("/api/v1/services");
+  const res = await fetch("/api/v1/services?limit=90");
   if (!res.ok) throw new Error(`Failed to fetch services: ${res.status}`);
   const json: ApiResponse = await res.json();
   if (!json.success) throw new Error("API returned success=false");
