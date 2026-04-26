@@ -88,7 +88,7 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const STAFF_FALLBACK_LABELS = ["A", "B", "C", "D", "E", "F"];
-const STAFF_COLUMN_COUNT = 3;
+const MIN_STAFF_COLUMNS = 3;
 const WORK_START_HOUR = 9;
 const WORK_END_HOUR = 23;
 const SLOT_MINUTES = 15;
@@ -331,19 +331,37 @@ const AdminBookings = () => {
   const gridCells = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
 
   const staffLaneLabels = useMemo(() => {
+    // Count max concurrent bookings to determine needed lanes
+    const sorted = selectedDayBookings
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
+    let maxConcurrent = MIN_STAFF_COLUMNS;
+    const ends: number[] = [];
+    for (const b of sorted) {
+      const start = new Date(b.startTime).getTime();
+      const end = new Date(b.endTime).getTime();
+      // Remove lanes that have ended
+      const active = ends.filter((e) => e > start);
+      active.push(end);
+      if (active.length > maxConcurrent) maxConcurrent = active.length;
+      ends.push(end);
+    }
+    const columnCount = maxConcurrent;
+
     const uniqueStaff = Array.from(
       new Set(
         selectedDayBookings
           .map((booking) => booking.staff?.name?.trim())
           .filter((name): name is string => Boolean(name)),
       ),
-    ).slice(0, STAFF_COLUMN_COUNT);
+    ).slice(0, columnCount);
 
     const lanes = uniqueStaff.slice();
-    while (lanes.length < STAFF_COLUMN_COUNT) {
-      lanes.push(
-        STAFF_FALLBACK_LABELS[lanes.length] ?? `Thợ ${lanes.length + 1}`,
-      );
+    while (lanes.length < columnCount) {
+      lanes.push(STAFF_FALLBACK_LABELS[lanes.length] ?? `${lanes.length + 1}`);
     }
 
     return lanes;
@@ -354,7 +372,8 @@ const AdminBookings = () => {
       label,
       bookings: [] as ApiBooking[],
     }));
-    const laneEndTime = new Array(STAFF_COLUMN_COUNT).fill(0);
+    const laneCount = staffLaneLabels.length;
+    const laneEndTime = new Array(laneCount).fill(0);
     const sortedBookings = selectedDayBookings
       .slice()
       .sort(
@@ -470,7 +489,7 @@ const AdminBookings = () => {
     return placements;
   }, [dayBookingColumns]);
 
-  const timelineColumnTemplate = `72px repeat(${STAFF_COLUMN_COUNT}, minmax(0, 1fr))`;
+  const timelineColumnTemplate = `72px repeat(${staffLaneLabels.length}, minmax(0, 1fr))`;
   const timelineRowTemplate = `repeat(${SLOT_COUNT}, minmax(${SLOT_ROW_HEIGHT_PX}px, ${SLOT_ROW_HEIGHT_PX}px))`;
 
   const selectedBooking = useMemo(

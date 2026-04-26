@@ -31,7 +31,7 @@ const statusColors: Record<string, string> = {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in browser local TZ
 
   // Fetch today's bookings + all PENDING for counts
   const {
