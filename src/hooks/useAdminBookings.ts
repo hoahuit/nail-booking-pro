@@ -24,7 +24,7 @@ export interface CreateAdminBookingPayload {
   serviceId: string;
   startTime: string;
   customerName: string;
-  customerPhone: string;
+  customerPhone?: string;
   customerEmail?: string;
   notes?: string;
   staffId?: string;
@@ -85,9 +85,11 @@ async function createAdminBooking(
     serviceId: payload.serviceId,
     startTime: payload.startTime,
     customerName: payload.customerName,
-    customerPhone: payload.customerPhone,
   };
 
+  if (payload.customerPhone?.trim()) {
+    body.customerPhone = payload.customerPhone.trim();
+  }
   if (payload.customerEmail?.trim()) {
     body.customerEmail = payload.customerEmail.trim();
   }
@@ -98,7 +100,7 @@ async function createAdminBooking(
     body.staffId = payload.staffId;
   }
 
-  const res = await fetch("/api/v1/bookings", {
+  const res = await fetch("/api/v1/bookings/admin", {
     method: "POST",
     headers: adminHeaders(),
     body: JSON.stringify(body),
@@ -137,6 +139,46 @@ export function useUpdateBookingStatus() {
     mutationFn: ({ id, status }) => patchStatus(id, status),
     onSuccess: (updated) => {
       toast.success(`Trạng thái đã cập nhật: ${updated.status}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-booking", updated.id] });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Cập nhật thất bại");
+    },
+  });
+}
+
+export interface UpdateAdminBookingPayload {
+  id: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  notes?: string;
+  startTime?: string;
+  staffId?: string;
+}
+
+async function patchBooking(payload: UpdateAdminBookingPayload): Promise<ApiBooking> {
+  const { id, ...body } = payload;
+  const res = await fetch(`/api/v1/bookings/${id}`, {
+    method: "PATCH",
+    headers: adminHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Cập nhật thất bại (${res.status})`);
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export function useUpdateAdminBooking() {
+  const queryClient = useQueryClient();
+  return useMutation<ApiBooking, Error, UpdateAdminBookingPayload>({
+    mutationFn: patchBooking,
+    onSuccess: (updated) => {
+      toast.success("Đã cập nhật booking");
       queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["admin-booking", updated.id] });
     },

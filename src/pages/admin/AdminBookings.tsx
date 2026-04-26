@@ -17,11 +17,14 @@ import {
   AlertCircle,
   Ban,
   Plus,
+  Pencil,
 } from "lucide-react";
 import {
   useAdminBookings,
   useCreateAdminBooking,
   useUpdateBookingStatus,
+  useUpdateAdminBooking,
+  type UpdateAdminBookingPayload,
 } from "@/hooks/useAdminBookings";
 import { useAdminServices } from "@/hooks/useAdminServices";
 import {
@@ -197,6 +200,23 @@ const AdminBookings = () => {
     null,
   );
   const [view, setView] = useState<"calendar" | "day" | "detail">("calendar");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+    notes: string;
+    date: string;
+    time: string;
+  }>({
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    notes: "",
+    date: "",
+    time: "",
+  });
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
 
   const commonFilters = {
     status: statusFilter,
@@ -234,6 +254,7 @@ const AdminBookings = () => {
     status: "NO_SHOW",
   });
   const updateStatus = useUpdateBookingStatus();
+  const updateBooking = useUpdateAdminBooking();
   const createBooking = useCreateAdminBooking();
   const servicesQuery = useAdminServices({
     isActive: true,
@@ -441,7 +462,7 @@ const AdminBookings = () => {
           booking,
           laneIndex,
           rowStart: boundedStartSlot + 1,
-          rowSpan: Math.max(1, boundedEndSlot - boundedStartSlot),
+          rowSpan: 1,
         });
       });
     });
@@ -475,8 +496,6 @@ const AdminBookings = () => {
 
   const quickFormReady = Boolean(
     quickBookingForm.customerName.trim() &&
-    quickBookingForm.customerPhone.trim() &&
-    quickBookingForm.customerEmail.trim() &&
     quickBookingForm.serviceId &&
     quickBookingForm.date &&
     quickBookingForm.time,
@@ -487,6 +506,41 @@ const AdminBookings = () => {
     setMonthCursor(date);
     setQuickBookingForm((prev) => ({ ...prev, date }));
     setIsQuickCreateOpen(true);
+  };
+
+  const openEditModal = (booking: import("@/lib/adminTypes").ApiBooking) => {
+    const start = new Date(booking.startTime);
+    const dateStr = toDateInputValue(start);
+    const timeStr = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+    setEditingBookingId(booking.id);
+    setEditForm({
+      customerName: booking.customerName,
+      customerPhone: booking.customerPhone ?? "",
+      customerEmail: booking.customerEmail ?? "",
+      notes: booking.notes ?? "",
+      date: dateStr,
+      time: timeStr,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingBookingId) return;
+    const payload: UpdateAdminBookingPayload = { id: editingBookingId };
+    if (editForm.customerName.trim())
+      payload.customerName = editForm.customerName.trim();
+    if (editForm.customerPhone.trim())
+      payload.customerPhone = editForm.customerPhone.trim();
+    payload.customerEmail = editForm.customerEmail.trim() || undefined;
+    payload.notes = editForm.notes.trim() || undefined;
+    if (editForm.date && editForm.time) {
+      const iso = combineDateTimeToIso(editForm.date, editForm.time);
+      if (iso) payload.startTime = iso;
+    }
+    updateBooking.mutate(payload, {
+      onSuccess: () => setIsEditOpen(false),
+    });
   };
 
   const openDayDetailModal = (date: string) => {
@@ -518,8 +572,8 @@ const AdminBookings = () => {
         serviceId: quickBookingForm.serviceId,
         startTime,
         customerName: quickBookingForm.customerName.trim(),
-        customerPhone: quickBookingForm.customerPhone.trim(),
-        customerEmail: quickBookingForm.customerEmail.trim(),
+        customerPhone: quickBookingForm.customerPhone.trim() || undefined,
+        customerEmail: quickBookingForm.customerEmail.trim() || undefined,
         notes: quickBookingForm.notes.trim() || undefined,
       },
       {
@@ -975,6 +1029,20 @@ const AdminBookings = () => {
                 </div>
               )}
 
+              {/* Edit button */}
+              {["PENDING", "CONFIRMED"].includes(selectedBooking.status) && (
+                <div className="pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(selectedBooking)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-800 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Chỉnh sửa booking
+                  </button>
+                </div>
+              )}
+
               {/* Status actions */}
               {(TRANSITIONS[selectedBooking.status] ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
@@ -1325,6 +1393,23 @@ const AdminBookings = () => {
                           </div>
                         )}
 
+                        {/* Edit button in modal */}
+                        {["PENDING", "CONFIRMED"].includes(booking.status) && (
+                          <div className="pt-1 border-t border-slate-200/80">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsDayDetailModalOpen(false);
+                                openEditModal(booking);
+                              }}
+                              className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-white bg-slate-700 rounded-md hover:bg-slate-800 transition-colors"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              Chỉnh sửa
+                            </button>
+                          </div>
+                        )}
+
                         {/* Status actions */}
                         {transitions.length > 0 && (
                           <div className="pt-1 border-t border-slate-200/80 flex flex-wrap gap-1.5">
@@ -1363,6 +1448,120 @@ const AdminBookings = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Booking Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base text-slate-800">
+              Chỉnh sửa booking
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Cập nhật thông tin booking. Để trống trường không muốn thay đổi.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="mt-1 space-y-3">
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Khách hàng
+              </label>
+              <input
+                value={editForm.customerName}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    customerName: e.target.value,
+                  }))
+                }
+                placeholder="Tên khách hàng"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  SĐT
+                </label>
+                <input
+                  value={editForm.customerPhone}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      customerPhone: e.target.value,
+                    }))
+                  }
+                  placeholder="0901234567"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editForm.customerEmail}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      customerEmail: e.target.value,
+                    }))
+                  }
+                  placeholder="khach@example.com"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Ngày
+                </label>
+                <input
+                  type="date"
+                  value={editForm.date}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, date: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                  Giờ
+                </label>
+                <input
+                  type="time"
+                  value={editForm.time}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, time: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                Ghi chú
+              </label>
+              <input
+                value={editForm.notes}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
+                placeholder="Ghi chú thêm (nếu có)"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={updateBooking.isPending}
+              className="w-full px-3 py-2 text-xs font-semibold text-white bg-slate-700 rounded-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {updateBooking.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+          </form>
         </DialogContent>
       </Dialog>
       {/* Quick Create Dialog */}
@@ -1460,7 +1659,7 @@ const AdminBookings = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                  SĐT *
+                  SĐT
                 </label>
                 <input
                   value={quickBookingForm.customerPhone}
@@ -1476,7 +1675,7 @@ const AdminBookings = () => {
               </div>
               <div>
                 <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
