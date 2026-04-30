@@ -70,16 +70,7 @@ const timeSlotsByPeriod = {
     "15:00",
     "15:30",
   ],
-  Evening: [
-    "16:00",
-    "16:30",
-    "17:00",
-    "17:30",
-    "18:00",
-    "18:30",
-    "19:00",
-    "19:30",
-  ],
+  Evening: ["16:00", "16:30", "17:00", "17:30"],
 };
 
 type Period = keyof typeof timeSlotsByPeriod;
@@ -604,19 +595,25 @@ const BookingModal = ({
                 </div>
 
                 <div className="grid grid-cols-6 gap-1.5">
-                  {timeSlotsByPeriod[period].map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => setSelectedTime(time)}
-                      className={`py-2 text-[11px] font-semibold rounded border transition-all ${
-                        selectedTime === time
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 bg-white"
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  ))}
+                  {timeSlotsByPeriod[period]
+                    .filter((time) =>
+                      selectedDate && selectedDate.getDay() === 0
+                        ? time !== "09:00"
+                        : true,
+                    )
+                    .map((time) => (
+                      <button
+                        key={time}
+                        onClick={() => setSelectedTime(time)}
+                        className={`py-2 text-[11px] font-semibold rounded border transition-all ${
+                          selectedTime === time
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 bg-white"
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
