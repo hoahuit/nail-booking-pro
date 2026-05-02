@@ -14,10 +14,13 @@ function adminHeaders(): Record<string, string> {
 export interface BookingFilters {
   status?: BookingStatus | "ALL";
   date?: string;       // YYYY-MM-DD
+  startDate?: string;  // YYYY-MM-DD (inclusive)
+  endDate?: string;    // YYYY-MM-DD (inclusive)
   staffId?: string;
   search?: string;
   page?: number;
   limit?: number;
+  enabled?: boolean;
 }
 
 export interface CreateAdminBookingPayload {
@@ -40,6 +43,8 @@ async function fetchBookings(filters: BookingFilters): Promise<ApiListResponse> 
   const params = new URLSearchParams();
   if (filters.status && filters.status !== "ALL") params.set("status", filters.status);
   if (filters.date) params.set("date", filters.date);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
   if (filters.staffId) params.set("staffId", filters.staffId);
   if (filters.search) params.set("search", filters.search);
   if (filters.page) params.set("page", String(filters.page));
@@ -115,13 +120,42 @@ async function createAdminBooking(
   return json.data;
 }
 
+async function fetchAllBookings(filters: Omit<BookingFilters, 'page' | 'limit' | 'enabled'>): Promise<ApiBooking[]> {
+  // Always passes startDate/endDate when available → keeps dataset small
+  const PAGE_LIMIT = 100;
+  const first = await fetchBookings({ ...filters, page: 1, limit: PAGE_LIMIT });
+  const all = [...first.data];
+  const totalPages = first.meta.totalPages ?? 1;
+  if (totalPages > 1) {
+    const requests = [];
+    for (let p = 2; p <= totalPages; p++) {
+      requests.push(fetchBookings({ ...filters, page: p, limit: PAGE_LIMIT }));
+    }
+    const pages = await Promise.all(requests);
+    for (const page of pages) all.push(...page.data);
+  }
+  return all;
+}
+
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
-export function useAdminBookings(filters: BookingFilters) {
-  return useQuery<ApiListResponse>({
-    queryKey: ["admin-bookings", filters],
-    queryFn: () => fetchBookings(filters),
+export function useAllAdminBookings(filters: Omit<BookingFilters, 'page' | 'limit'>) {
+  const { enabled, ...fetchFilters } = filters;
+  return useQuery<ApiBooking[]>({
+    queryKey: ["admin-bookings-all", fetchFilters],
+    queryFn: () => fetchAllBookings(fetchFilters),
     staleTime: 30_000,
+    enabled: enabled !== false,
+  });
+}
+
+export function useAdminBookings(filters: BookingFilters) {
+  const { enabled, ...fetchFilters } = filters;
+  return useQuery<ApiListResponse>({
+    queryKey: ["admin-bookings", fetchFilters],
+    queryFn: () => fetchBookings(fetchFilters),
+    staleTime: 30_000,
+    enabled: enabled !== false,
   });
 }
 

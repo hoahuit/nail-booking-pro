@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import {
   useAdminBookings,
+  useAllAdminBookings,
   useCreateAdminBooking,
   useUpdateBookingStatus,
   useUpdateAdminBooking,
@@ -218,6 +219,18 @@ const AdminBookings = () => {
   });
   const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
 
+  // Compute month boundaries early so we can pass them to the query
+  const monthStartDate = useMemo(() => {
+    const d = startOfMonth(monthCursor);
+    return toDateInputValue(d);
+  }, [monthCursor]);
+  const monthEndDate = useMemo(() => {
+    const d = startOfMonth(monthCursor);
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() - 1);
+    return toDateInputValue(d);
+  }, [monthCursor]);
+
   const commonFilters = {
     status: statusFilter,
     search: search || undefined,
@@ -225,7 +238,14 @@ const AdminBookings = () => {
     limit: 100,
   } as const;
 
-  const monthQuery = useAdminBookings({ ...commonFilters });
+  // Month calendar: only fetch bookings within the visible month range
+  // → dataset stays small (~30 days) regardless of total booking count
+  const monthQuery = useAllAdminBookings({
+    status: statusFilter,
+    search: search || undefined,
+    startDate: monthStartDate,
+    endDate: monthEndDate,
+  });
   const dayQuery = useAdminBookings({ ...commonFilters, date: selectedDate });
   const countFilters = {
     search: search || undefined,
@@ -271,7 +291,7 @@ const AdminBookings = () => {
     NO_SHOW: noShowCountQuery.data?.meta?.total ?? 0,
   };
 
-  const monthBookings = (monthQuery.data?.data ?? []).filter(
+  const monthBookings = (monthQuery.data ?? []).filter(
     (b) => b.status !== "CANCELLED",
   );
   const selectedDayBookings = (dayQuery.data?.data ?? []).filter(
@@ -300,14 +320,7 @@ const AdminBookings = () => {
     const map = new Map<string, ApiBooking[]>();
 
     for (const booking of monthBookings) {
-      const start = new Date(booking.startTime);
-      if (
-        start.getMonth() !== currentMonth ||
-        start.getFullYear() !== currentYear
-      ) {
-        continue;
-      }
-      const key = toDateInputValue(start);
+      const key = toDateInputValue(new Date(booking.startTime));
       const list = map.get(key) ?? [];
       list.push(booking);
       map.set(key, list);
@@ -326,7 +339,7 @@ const AdminBookings = () => {
     }
 
     return map;
-  }, [monthBookings, currentMonth, currentYear]);
+  }, [monthBookings]);
 
   const gridCells = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
 
@@ -1139,6 +1152,7 @@ const AdminBookings = () => {
                     const isCurrentMonth = cell.getMonth() === currentMonth;
                     const isSelected = key === selectedDate;
                     const isToday = key === toDateInputValue(new Date());
+                    const isPast = key < toDateInputValue(new Date());
 
                     return (
                       <div
@@ -1155,7 +1169,9 @@ const AdminBookings = () => {
                         tabIndex={0}
                         className={`min-h-[112px] p-1.5 border-r border-b border-slate-100 text-left align-top transition-colors ${
                           isCurrentMonth
-                            ? "bg-white hover:bg-blue-50/50"
+                            ? isPast
+                              ? "bg-slate-50/80 hover:bg-slate-100/80"
+                              : "bg-white hover:bg-blue-50/50"
                             : "bg-slate-50 text-slate-400 hover:bg-slate-100"
                         } ${isSelected ? "ring-2 ring-inset ring-blue-500" : ""} cursor-pointer`}
                       >
@@ -1164,7 +1180,9 @@ const AdminBookings = () => {
                             className={`text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full ${
                               isToday
                                 ? "bg-blue-600 text-white"
-                                : "text-slate-600"
+                                : isPast && isCurrentMonth
+                                  ? "text-slate-400"
+                                  : "text-slate-600"
                             }`}
                           >
                             {cell.getDate()}
@@ -1199,7 +1217,7 @@ const AdminBookings = () => {
                           {events.slice(0, 3).map((booking) => (
                             <div
                               key={booking.id}
-                              className={`px-2 py-1 rounded text-[10px] text-white truncate ${STATUS_EVENT[booking.status]}`}
+                              className={`px-2 py-1 rounded text-[10px] text-white truncate ${STATUS_EVENT[booking.status]} ${isPast ? "opacity-40" : ""}`}
                               title={`${timeOnly(booking.startTime)} ${booking.customerName} - ${
                                 booking.service?.name ??
                                 booking.items
