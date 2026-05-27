@@ -18,6 +18,7 @@ import {
   Ban,
   Plus,
   Pencil,
+  Settings,
 } from "lucide-react";
 import {
   useAdminBookings,
@@ -28,6 +29,10 @@ import {
   type UpdateAdminBookingPayload,
 } from "@/hooks/useAdminBookings";
 import { useAdminServices } from "@/hooks/useAdminServices";
+import {
+  useAdminSettings,
+  useUpdateAdminSettings,
+} from "@/hooks/useAdminSettings";
 import {
   Dialog,
   DialogContent,
@@ -90,7 +95,7 @@ const TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const STAFF_FALLBACK_LABELS = ["A", "B", "C", "D", "E", "F"];
 const MIN_STAFF_COLUMNS = 3;
-const WORK_START_HOUR = 9;
+const WORK_START_HOUR = 8;
 const WORK_END_HOUR = 23;
 const SLOT_MINUTES = 15;
 const SLOT_ROW_HEIGHT_PX = 60;
@@ -202,6 +207,8 @@ const AdminBookings = () => {
   );
   const [view, setView] = useState<"calendar" | "day" | "detail">("calendar");
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [maxBookingsInput, setMaxBookingsInput] = useState("4");
   const [editForm, setEditForm] = useState<{
     customerName: string;
     customerPhone: string;
@@ -276,6 +283,8 @@ const AdminBookings = () => {
   const updateStatus = useUpdateBookingStatus();
   const updateBooking = useUpdateAdminBooking();
   const createBooking = useCreateAdminBooking();
+  const settingsQuery = useAdminSettings();
+  const updateSettings = useUpdateAdminSettings();
   const servicesQuery = useAdminServices({
     isActive: true,
     page: 1,
@@ -311,6 +320,13 @@ const AdminBookings = () => {
       prev.serviceId ? prev : { ...prev, serviceId: availableServices[0].id },
     );
   }, [availableServices]);
+
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    if (settingsQuery.data?.maxBookingsPerSlot !== undefined) {
+      setMaxBookingsInput(String(settingsQuery.data.maxBookingsPerSlot));
+    }
+  }, [isSettingsOpen, settingsQuery.data?.maxBookingsPerSlot]);
 
   const currentMonthStart = startOfMonth(monthCursor);
   const currentMonth = currentMonthStart.getMonth();
@@ -625,6 +641,15 @@ const AdminBookings = () => {
     );
   };
 
+  const handleSettingsSave = async () => {
+    const parsed = Number.parseInt(maxBookingsInput, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      toast.error("So luong toi da phai >= 1");
+      return;
+    }
+    await updateSettings.mutateAsync({ maxBookingsPerSlot: parsed });
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -635,21 +660,32 @@ const AdminBookings = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            void monthQuery.refetch();
-            void dayQuery.refetch();
-          }}
-          disabled={monthQuery.isFetching || dayQuery.isFetching}
-          className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
-        >
-          <RefreshCw
-            className={`w-3.5 h-3.5 ${
-              monthQuery.isFetching || dayQuery.isFetching ? "animate-spin" : ""
-            }`}
-          />
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          {/* <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Cài đặt
+          </button> */}
+          <button
+            onClick={() => {
+              void monthQuery.refetch();
+              void dayQuery.refetch();
+            }}
+            disabled={monthQuery.isFetching || dayQuery.isFetching}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${
+                monthQuery.isFetching || dayQuery.isFetching
+                  ? "animate-spin"
+                  : ""
+              }`}
+            />
+            Làm mới
+          </button>
+        </div>
       </div>
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -1484,6 +1520,39 @@ const AdminBookings = () => {
                   })}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base text-slate-800">
+              Cấu hình số lượng
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-1 space-y-3">
+            <div>
+              <input
+                type="number"
+                min={1}
+                value={maxBookingsInput}
+                onChange={(event) => setMaxBookingsInput(event.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-md bg-white"
+              />
+              <p className="mt-1 text-[11px] text-slate-400">
+                Giá trị hiện tại:{" "}
+                {settingsQuery.data?.maxBookingsPerSlot ?? "—"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSettingsSave()}
+              disabled={updateSettings.isPending || settingsQuery.isLoading}
+              className="w-full px-3 py-2 text-xs font-semibold text-white bg-slate-700 rounded-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {updateSettings.isPending ? "Dang luu..." : "Lưu"}
+            </button>
           </div>
         </DialogContent>
       </Dialog>

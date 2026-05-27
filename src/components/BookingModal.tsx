@@ -59,16 +59,7 @@ const MONTH_NAMES = [
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const timeSlotsByPeriod = {
-  Morning: [
-    "08:00",
-    "08:30",
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-  ],
+  Morning: ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
   Afternoon: [
     "12:00",
     "12:30",
@@ -79,7 +70,7 @@ const timeSlotsByPeriod = {
     "15:00",
     "15:30",
   ],
-  Evening: ["16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"],
+  Evening: ["16:00", "16:30", "17:00", "17:30"],
 };
 
 type Period = keyof typeof timeSlotsByPeriod;
