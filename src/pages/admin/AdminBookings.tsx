@@ -661,13 +661,13 @@ const AdminBookings = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* <button
+          <button
             onClick={() => setIsSettingsOpen(true)}
             className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Settings className="w-3.5 h-3.5" />
             Cài đặt
-          </button> */}
+          </button>
           <button
             onClick={() => {
               void monthQuery.refetch();
