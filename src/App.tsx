@@ -19,7 +19,7 @@ import AdminVouchers from "./pages/admin/AdminVouchers.tsx";
 import { getToken } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
-const ROUTE_DELAY_MS = 5_000;
+const ROUTE_DELAY_MS = 10_000;
 
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const isAuth = !!getToken();
